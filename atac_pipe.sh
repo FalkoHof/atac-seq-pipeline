@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -P atac_seq
+#PBS -P rnaseq_nod
 #PBS -N atac-seq-pipe
 #PBS -J 1-7
 #PBS -j oe
