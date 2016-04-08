@@ -1,12 +1,12 @@
 #!/bin/bash
 #PBS -P atac-seq
 #PBS -N atac-seq-pipe
-#PBS -J 1-69
+#PBS -J 1-7
 #PBS -j oe
 #PBS -q workq
 #PBS -o /lustre/scratch/users/$USER/log/160408_atac-seq/160408_atac-seq_^array_index^.log
 #PBS -l walltime=48:00:00
-#PBS -l select=1:ncpus=8:mem=18gb
+#PBS -l select=1:ncpus=8:mem=64gb
 
 ##### specify folders and variables #####
 #set base dir
