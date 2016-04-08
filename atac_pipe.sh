@@ -6,17 +6,17 @@
 #PBS -q workq
 #PBS -o /lustre/scratch/users/$USER/log/160308_htseq-count/160308_htseq-count_^array_index^.log
 #PBS -l walltime=48:00:00
-#PBS -l select=1:ncpus=4:mem=18gb
-
+#PBS -l select=1:ncpus=8:mem=18gb
 
 ##### specify folders and variables #####
-#TODO: complete
 #set base dir
 base_dir=/lustre/scratch/users/$USER/atac_seq
 #folders for bam files
 bam_files=$base_dir/bam_files
 bam_files_unmapped=$bam_files/unmapped
 bam_files_aligned=$bam_files/aligned
+#folders for bed files
+bed_files=$base_dir/bed_files
 #folders for temp files
 temp_dir=$base_dir/temp
 #folder for fastq files
@@ -26,7 +26,9 @@ log_files=$base_dir/logs
 #folder for fastqc files
 fastqc_output=$base_dir/fastqc
 #set bowtie2 index location
-bt2_index=
+bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/
+#genome sizes for converting back to bam
+tair10_genome_size=chromLength.txt
 #file that maps input file base names to pbs array number
 mapping_file=/lustre/scratch/users/falko.hofmann/rna_seq/pbs_mapping_file.txt
 
@@ -42,7 +44,7 @@ module load BEDTools/v2.17.0-goolf-1.4.10
 module load Bowtie2/2.1.0-goolf-1.4.10
 module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
-module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
+#module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 picard=/lustre/scratch/users/$USER/software/picard/2.2.1
 
@@ -57,29 +59,27 @@ mkdir -p $temp_dir
 mkdir -p $log_files
 
 ##### Startint the ATAC-seq pipeline #####
-#1.mapping
+echo 'Starting ATAC-seq pipeline for '${NAME}
+##1.mapping
 echo "1 - Start mapping part..."
 #1.1 sort bam file
 echo "1.1 - Name sorting bam file..."
-samtools sort -n -m 4G -@ 12 -o $bam_files_unmapped/${NAME}.sorted.bam \
+samtools sort -n -m 4G -@ 8 -o $bam_files_unmapped/${NAME}.sorted.bam \
   $bam_files_unmapped/${NAME}.bam
 echo "1.1 - Name sorting bam file... - Done"
-
 #1.2 run fastqc
 echo "1.2 - Running fastqc..."
 fastqc -o $fastqc_output/${NAME} $bam_files_unmapped/${NAME}.sorted.bam
 echo "1.2 - Running fastqc... - Done"
-
 #1.3 convert bam to fq
 echo "1.3 - Converting bam to fastq..."
 bedtools bamtofastq -i $bam_files_unmapped/${NAME}.sorted.bam  \
   -fq $fastq_files/${NAME}.end1.fq  \
   -fq2 $fastq_files/${NAME}.end2.fq
 echo "1.3 - Converting bam to fastq... - Done"
-
 #1.4 align to genome
 echo "1.4 - Starting alignment with bowtie2..."
-bowtie2 --threads 12 \
+bowtie2 --threads 8 \
   --very-sensitive \
   --maxins 2000 \
   --no-discordant \
@@ -90,34 +90,46 @@ bowtie2 --threads 12 \
   -S $bam_files_aligned/${NAME}.sam \
   2> $log_files/${NAME}_bt2_summary.txt
 echo "1.4 - Starting alignment with bowtie2... - Done"
-
 #1.5 sort mapped reads and convert to bam
 samtools view -bS $bam_files_aligned/${NAME}.sam \
-  | samtools sort -n -m 4G -@ 12 -o $bam_files_aligned/${NAME}.bam -
-echo "1 - Finished mapping part..."
-
-#2.file conversions
-#TODO: implement
+  | samtools sort -n -m 4G -@ 8 -o $bam_files_aligned/${NAME}.bam -
+echo "1 - Finished mapping part."
+##2.file conversions
 echo "2 - Starting post processing..."
-
 #2.1 remove duplicates
+echo "2.1 - Removing duplicates..."
 #java -Djava.io.tmpdir=$temp_dir -jar $picard/picard.jar \
 java -jar $picard/picard.jar MarkDuplicates I=$bam_files_aligned/${NAME}.bam \
   O=$bam_files_aligned/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
   AS=true REMOVE_DUPLICATES=true TMP_DIR=$TMPDIR
-
+echo "2.1 - Removing duplicates... - Done"
 #2.2 convert to bed file
+echo "2.2 - Converting bam to bed..."
+bedtools bamtobed -i $bam_files_aligned/${NAME}_unique.bam > $bed_files/${NAME}_unique.bed
+echo "2.2 - Converting bam to bed... - Done"
 #2.3 sort bed file by mate id
+#sort -k4,4 -t $'\t' $WSEQ/${NAME}/bowtie/accepted_hits_bt.bed > $WSEQ/${NAME}/bowtie/accepted_hits_mate_sorted_bt.bed
 #2.4 offset data
-python add_offset_for_fp.py $fin $fout
+echo "2.4 - Offsetting data..."
+python add_offset_for_fp.py $bed_files/${NAME}_unique.bed $bed_files/${NAME}_unique_offset.bed
 #2.5 convert back to bam file
+bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
+  > $bam_files_aligned/${NAME}_unique_offset.bam
+echo "2.4 - Offsetting data... - Done"
 
-
-#3.analysis
+echo "2.5 - Extracting read length..."
+#run script to extract the read length per mate pair
+python extractReadLength.py $bed_files/${NAME}_unique.bed \
+  $log_files/${NAME}readLength_bt2.tab
+#sort -n -k2,2 -t $'\t' $WSEQ/${NAME}/bowtie/readLength_${NAME}_bt.tab > $WSEQ/${NAME}/bowtie/readLength_${NAME}_bt_sorted.tab
+echo "2.5 - Extracting read length... - Done"
+echo "2 - Finished post processing."
 #TODO: implement
+#3.analysis
 #3.1 extract read length
 #3.2 peakcalling
 #3.2.1 macs2
 #3.2.2 fseq
 #3.3 estimate library complexity via preseq
 #3.4 do footprinting
+echo 'ATAC-seq pipeline complete.'

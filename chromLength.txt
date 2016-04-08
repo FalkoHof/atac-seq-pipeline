@@ -1,0 +1,7 @@
+Ath_chr1	30427671
+Ath_chr2	19698289
+Ath_chr3	23459830
+Ath_chr4	18585056
+Ath_chr5	26975502
+Ath_chrc	154478
+Ath_chrm	366924
