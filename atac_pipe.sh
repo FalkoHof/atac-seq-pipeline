@@ -4,7 +4,7 @@
 #PBS -J 1-69
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/$USER/log/160308_htseq-count/160308_htseq-count_^array_index^.log
+#PBS -o /lustre/scratch/users/$USER/log/160408_atac-seq/160408_atac-seq_^array_index^.log
 #PBS -l walltime=48:00:00
 #PBS -l select=1:ncpus=8:mem=18gb
 
@@ -30,7 +30,7 @@ bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/
 #genome sizes for converting back to bam
 tair10_genome_size=chromLength.txt
 #file that maps input file base names to pbs array number
-mapping_file=/lustre/scratch/users/falko.hofmann/rna_seq/pbs_mapping_file.txt
+mapping_file=pbs_mapping_file.txt
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as the line number #####
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $mapping_file`
@@ -117,12 +117,13 @@ bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
   > $bam_files_aligned/${NAME}_unique_offset.bam
 echo "2.4 - Offsetting data... - Done"
 
-echo "2.5 - Extracting read length..."
+#echo "2.5 - Extracting read length..."
+#TODO:implement for new script version
 #run script to extract the read length per mate pair
-python extractReadLength.py $bed_files/${NAME}_unique.bed \
-  $log_files/${NAME}readLength_bt2.tab
+#python extract_read_length.py.py $bed_files/${NAME}_unique.bed \
+#  $log_files/${NAME}readLength_bt2.tab
 #sort -n -k2,2 -t $'\t' $WSEQ/${NAME}/bowtie/readLength_${NAME}_bt.tab > $WSEQ/${NAME}/bowtie/readLength_${NAME}_bt_sorted.tab
-echo "2.5 - Extracting read length... - Done"
+#echo "2.5 - Extracting read length... - Done"
 echo "2 - Finished post processing."
 #TODO: implement
 #3.analysis
