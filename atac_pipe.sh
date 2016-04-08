@@ -10,6 +10,7 @@
 
 ##### specify folders and variables #####
 #set base dir
+pipe_dir=/lustre/scratch/users/$USER/pipes/pipes/atac-seq-pipeline
 base_dir=/lustre/scratch/users/$USER/atac_seq
 #folders for bam files
 bam_files=$base_dir/bam_files
@@ -30,7 +31,7 @@ bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/
 #genome sizes for converting back to bam
 tair10_genome_size=chromLength.txt
 #file that maps input file base names to pbs array number
-mapping_file=pbs_mapping_file.txt
+mapping_file=$base_dir/pbs_mapping_file.txt
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as the line number #####
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $mapping_file`
@@ -111,7 +112,7 @@ echo "2.2 - Converting bam to bed... - Done"
 #sort -k4,4 -t $'\t' $WSEQ/${NAME}/bowtie/accepted_hits_bt.bed > $WSEQ/${NAME}/bowtie/accepted_hits_mate_sorted_bt.bed
 #2.4 offset data
 echo "2.4 - Offsetting data..."
-python add_offset_for_fp.py $bed_files/${NAME}_unique.bed $bed_files/${NAME}_unique_offset.bed
+python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}_unique.bed $bed_files/${NAME}_unique_offset.bed
 #2.5 convert back to bam file
 bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
   > $bam_files_aligned/${NAME}_unique_offset.bam
