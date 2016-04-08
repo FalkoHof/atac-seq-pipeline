@@ -27,7 +27,7 @@ log_files=$base_dir/logs
 #folder for fastqc files
 fastqc_output=$base_dir/fastqc
 #set bowtie2 index location
-bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/
+bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/Col
 #genome sizes for converting back to bam
 tair10_genome_size=chromLength.txt
 #file that maps input file base names to pbs array number
@@ -45,6 +45,8 @@ module load BEDTools/v2.17.0-goolf-1.4.10
 module load Bowtie2/2.1.0-goolf-1.4.10
 module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
+module load FastQC/0.11.5-foss-2015a
+
 #module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 picard=/lustre/scratch/users/$USER/software/picard/picard-tools-2.2.1
