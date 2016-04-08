@@ -47,7 +47,7 @@ module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
 #module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
-picard=/lustre/scratch/users/$USER/software/picard/2.2.1
+picard=/lustre/scratch/users/$USER/software/picard/picard-tools-2.2.1
 
 ##### Make folders before starting the pipeline#####
 #TODO: complete
