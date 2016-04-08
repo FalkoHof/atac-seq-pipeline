@@ -4,6 +4,7 @@ x=1
 find $input_dir -type f -name "*.bam" | while read line
 do
   b=$(basename $line)
-  printf "%d %s\n" $x $b
+  y=${b%.bam}
+  printf "%d %s\n" $x $y
   ((x++))
 done
