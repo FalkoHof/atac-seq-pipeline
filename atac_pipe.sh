@@ -10,12 +10,15 @@
 
 ##### specify folders and variables #####
 #set base dir
-pipe_dir=/lustre/scratch/users/$USER/pipes/pipes/atac-seq-pipeline
+pipe_dir=/lustre/scratch/users/$USER/pipes/atac-seq-pipeline
 base_dir=/lustre/scratch/users/$USER/atac_seq
 #folders for bam files
 bam_files=$base_dir/bam_files
 bam_files_unmapped=$bam_files/unmapped
 bam_files_aligned=$bam_files/aligned
+#bam_files_uniqe=$bam_files/aligned/unique
+#bam_files_offsetted=$bam_files_uniqe/offsetted
+
 #folders for bed files
 bed_files=$base_dir/bed_files
 #folders for temp files
@@ -46,8 +49,7 @@ module load Bowtie2/2.1.0-goolf-1.4.10
 module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
 module load FastQC/0.11.5-foss-2015a
-
-#module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
+module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 picard=/lustre/scratch/users/$USER/software/picard/picard-tools-2.2.1
 
@@ -67,42 +69,44 @@ echo 'Starting ATAC-seq pipeline for '${NAME}
 echo "1 - Start mapping part..."
 #1.1 sort bam file
 echo "1.1 - Name sorting bam file..."
-samtools sort -n -m 4G -@ 8 -o $bam_files_unmapped/${NAME}.sorted.bam \
-  $bam_files_unmapped/${NAME}.bam
+#samtools sort -n -m 4G -@ 8 -o $bam_files_unmapped/${NAME}.sorted.bam \
+#  $bam_files_unmapped/${NAME}.bam
 echo "1.1 - Name sorting bam file... - Done"
 #1.2 run fastqc
 echo "1.2 - Running fastqc..."
-fastqc -o $fastqc_output/${NAME} $bam_files_unmapped/${NAME}.sorted.bam
+#fastqc -o $fastqc_output/${NAME} $bam_files_unmapped/${NAME}.sorted.bam
 echo "1.2 - Running fastqc... - Done"
 #1.3 convert bam to fq
 echo "1.3 - Converting bam to fastq..."
-bedtools bamtofastq -i $bam_files_unmapped/${NAME}.sorted.bam  \
-  -fq $fastq_files/${NAME}.end1.fq  \
-  -fq2 $fastq_files/${NAME}.end2.fq
+#bedtools bamtofastq -i $bam_files_unmapped/${NAME}.sorted.bam  \
+#  -fq $fastq_files/${NAME}.end1.fq  \
+#  -fq2 $fastq_files/${NAME}.end2.fq
 echo "1.3 - Converting bam to fastq... - Done"
 #1.4 align to genome
 echo "1.4 - Starting alignment with bowtie2..."
-bowtie2 --threads 8 \
-  --very-sensitive \
-  --maxins 2000 \
-  --no-discordant \
-  --no-mixed \
-  -x $bt2_index \
-  -1 $fastq_files/${NAME}.end1.fq \
-  -2 $fastq_files/${NAME}.end2.fq \
-  -S $bam_files_aligned/${NAME}.sam \
-  2> $log_files/${NAME}_bt2_summary.txt
+#bowtie2 --threads 8 \
+#  --very-sensitive \
+#  --maxins 2000 \
+#  --no-discordant \
+#  --no-mixed \
+#  -x $bt2_index \
+#  -1 $fastq_files/${NAME}.end1.fq \
+#  -2 $fastq_files/${NAME}.end2.fq \
+#  -S $bam_files_aligned/${NAME}.sam \
+#  2> $log_files/${NAME}_bt2_summary.txt
 echo "1.4 - Starting alignment with bowtie2... - Done"
 #1.5 sort mapped reads and convert to bam
-samtools view -bS $bam_files_aligned/${NAME}.sam \
-  | samtools sort -n -m 4G -@ 8 -o $bam_files_aligned/${NAME}.bam -
+#samtools view -bS $bam_files_aligned/${NAME}.sam \
+#  | samtools sort -n -m 4G -@ 8 -o $bam_files_aligned/${NAME}.bam -
+
+#rm $bam_files_aligned/${NAME}.sam
 echo "1 - Finished mapping part."
 ##2.file conversions
 echo "2 - Starting post processing..."
 #2.1 remove duplicates
 echo "2.1 - Removing duplicates..."
 #java -Djava.io.tmpdir=$temp_dir -jar $picard/picard.jar \
-java -jar $picard/picard.jar MarkDuplicates I=$bam_files_aligned/${NAME}.bam \
+java -jar -Xmx60g $picard/picard.jar MarkDuplicates I=$bam_files_aligned/${NAME}.bam \
   O=$bam_files_aligned/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
   AS=true REMOVE_DUPLICATES=true TMP_DIR=$TMPDIR
 echo "2.1 - Removing duplicates... - Done"
@@ -133,6 +137,7 @@ echo "2 - Finished post processing."
 #3.1 extract read length
 #3.2 peakcalling
 #3.2.1 macs2
+
 #3.2.2 fseq
 #3.3 estimate library complexity via preseq
 #3.4 do footprinting
