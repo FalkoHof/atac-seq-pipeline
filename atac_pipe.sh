@@ -34,7 +34,7 @@ fastqc_output=$base_dir/fastqc
 #set bowtie2 index location
 bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/Col
 #genome sizes for converting back to bam
-tair10_genome_size=chromLength.txt
+tair10_genome_size=$pipe_dir/chromLength.txt
 #file that maps input file base names to pbs array number
 mapping_file=$base_dir/pbs_mapping_file.txt
 
@@ -69,6 +69,8 @@ mkdir -p $fastqc_output/${NAME}
 
 mkdir -p $temp_dir
 mkdir -p $log_files
+
+mkdir -p $bed_files
 
 ##### Startint the ATAC-seq pipeline #####
 echo 'Starting ATAC-seq pipeline for '${NAME}
