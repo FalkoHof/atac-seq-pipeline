@@ -104,10 +104,10 @@ bowtie2 --threads 8 \
 echo "1.4 - Starting alignment with bowtie2... - Done"
 #1.5 sort mapped reads and convert to bam
 samtools view -bS $temp_dir/${NAME}.sam \
-  | samtools sort -I 9 -n -m 4G -@ 8 -o $bam_files_name_sorted/${NAME}.bam -
+  | samtools sort -n -m 4G -@ 8 -o $bam_files_name_sorted/${NAME}.bam -
 
 samtools view -bS $temp_dir/${NAME}.sam \
-  | samtools sort -I 9 -m 4G -@ 8 -o $bam_files_coordinate_sorted/${NAME}.bam
+  | samtools sort -m 4G -@ 8 -o $bam_files_coordinate_sorted/${NAME}.bam
 
 rm $temp_dir/${NAME}.sam
 echo "1 - Finished mapping part."
@@ -142,10 +142,10 @@ rm $temp_dir/${NAME}_unique_mate_sorted.bed
 
 #2.5 convert back to bam file
 bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
-  | samtools sort -I 9 -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_unique_offset.bam
+  | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_unique_offset.bam
 
 bedToBam -i $bed_files/${NAME}_offset.bed -g $tair10_genome_size \
-  | samtools sort -I 9 -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_offset.bam
+  | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_offset.bam
 
 echo "2.4 - Offsetting data... - Done"
 
