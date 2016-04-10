@@ -87,7 +87,6 @@ def writeDetailedInfo(fout,id, chr, length, pos1, pos2):
     fout.write(id + '\t' + str(length) + '\t' + chr + '\t' + str(pos1) + '\t' + str(pos2) +'\n')
 
 
-
 #generate filenames for output
 filenameHisto, filenameDetail = generateFilenames(filenameInput)
 

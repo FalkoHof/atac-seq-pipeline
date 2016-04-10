@@ -4,7 +4,7 @@
 #PBS -J 1-7
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/160408_atac-seq/160408_atac-seq_^array_index^.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/160410_atac-seq/160410_atac-seq_^array_index^.log
 #PBS -l walltime=48:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
@@ -51,7 +51,7 @@ module load Bowtie2/2.1.0-goolf-1.4.10
 module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
 module load FastQC/0.11.5-foss-2015a
-module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
+#module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 picard=/lustre/scratch/users/$USER/software/picard/picard-tools-2.2.1
 
@@ -126,7 +126,7 @@ echo "2.1 - Removing duplicates... - Done"
 #2.2 convert to bed file
 echo "2.2 - Converting bam to bed..."
 bedtools bamtobed -i $bam_files_uniqe/${NAME}_unique.bam > $bed_files/${NAME}_unique.bed
-bedtools bamtobed -i $bam_files_uniqe/${NAME}.bam > $bed_files/${NAME}.bed
+bedtools bamtobed -i $bam_files_name_sorted/${NAME}.bam > $bed_files/${NAME}.bed
 
 
 echo "2.2 - Converting bam to bed... - Done"

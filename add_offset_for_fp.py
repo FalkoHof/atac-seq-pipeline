@@ -1,4 +1,4 @@
-# script to offset reads aligning to the + strand by +4 bp, and all reads aligning to the – strand by −5 bp.
+# script to offset reads aligning to the + strand by +4 bp, and all reads aligning to the - strand by - 5 bp.
 # provide input file as first argument, file output name as second, the script takes bed files as input
 # change the values in dictionary genome_size according to the reference genome chromosome names and sizes used for mapping.
 # to log output of the file simply pipe std out to a txt file
