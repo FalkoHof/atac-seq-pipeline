@@ -40,6 +40,7 @@ mapping_file=$base_dir/pbs_mapping_file.txt
 
 ####set to 0 (false) or 1 (true) to let the repsective code block run
 mapping=0
+converting=1
 post_processing=1
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as the line number #####
@@ -109,6 +110,8 @@ if [ $mapping -eq 1 ]; then
     -S $temp_dir/${NAME}.sam \
     2> $log_files/${NAME}_bt2_summary.txt
     echo "1.4 - Starting alignment with bowtie2... - Done"
+fi
+if [ $converting -eq 1 ]; then
     #1.5 convert to bam, get mapped concordant mapped reads and and convert to bam
     samtools view -bS $temp_dir/${NAME}.sam > $temp_dir/${NAME}.bam
     samtools view -hf 0x2 $temp_dir/${NAME}.bam > $temp_dir/${NAME}_concordant_only.bam
