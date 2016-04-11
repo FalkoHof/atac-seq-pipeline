@@ -77,9 +77,9 @@ mkdir -p $log_files
 mkdir -p $bed_files
 
 ##### Startint the ATAC-seq pipeline #####
+echo 'Starting ATAC-seq pipeline for '${NAME}
+##1.mapping
 if [ $mapping -eq 1 ]; then
-  echo 'Starting ATAC-seq pipeline for '${NAME}
-  ##1.mapping
   echo "1 - Start mapping part..."
   #1.1 sort bam file
   echo "1.1 - Name sorting bam file..."
@@ -120,8 +120,8 @@ if [ $mapping -eq 1 ]; then
     echo "1 - Finished mapping part."
 fi
 
+##2.file conversions, duplicates removal and offsetting
 if [ $post_processing  -eq 1 ]; then
-  ##2.file conversions
   echo "2 - Starting post processing..."
   #2.1 remove duplicates
   echo "2.1 - Removing duplicates..."
