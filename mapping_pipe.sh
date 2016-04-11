@@ -1,11 +1,11 @@
 #!/bin/bash
 #PBS -P rnaseq_nod
-#PBS -N atac-seq-pipe
+#PBS -N atac-seq_mapping
 #PBS -J 1-7
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/160410_atac-seq/160410_atac-seq_^array_index^.log
-#PBS -l walltime=48:00:00
+#PBS -o /lustre/scratch/users/falko.hofmann/log/160410_atac-seq/160410_atac-seq_^array_index^_mapping.log
+#PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
 ##### specify folders and variables #####
@@ -27,7 +27,7 @@ temp_dir=$base_dir/temp
 #folder for fastq files
 fastq_files=$base_dir/fastq
 fastq_pre=$fastq_files/pre_alignment
-fastq_post=$base_dir/post_alignment
+fastq_post=$fastq_files/post_alignment
 #folder for bowtie2 aligment logs
 log_files=$base_dir/logs
 #folder for fastqc files
@@ -162,7 +162,7 @@ if [ $post_processing  -eq 1 ]; then
   #2.4 offset data
   echo "2.4 - Offsetting data..."
   python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_unique_mate_sorted.bed \
-    $bed_files/${NAME}_unique_offset.bed
+    $bed_files/${NAME}_unique_offset.bed &
   python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_mate_sorted.bed \
     $bed_files/${NAME}_offset.bed
 
@@ -174,20 +174,12 @@ if [ $post_processing  -eq 1 ]; then
   echo "2.4 - Offsetting data... - Done"
 
   echo "2.5 - Extracting read lenght..."
-  python extract_read_length.py -g -v -o "$read_length_dir" \
+  python $pipe_dir/extract_read_length.py -g -v -o "$read_length_dir" \
     "$temp_dir/${NAME}_mate_sorted.bed"
   echo "2.5 - Extracting read length... - Done"
   echo "2 - Finished post processing."
 fi
-#TODO: implement
-#3.analysis
-#3.1 extract read length
-#3.2 peakcalling
-#3.2.1 macs2
-
-#3.2.2 fseq
-#3.3 estimate library complexity via preseq
-#3.4 do footprinting
+#3. clean up and delete unecessary files
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
   rm $temp_dir/${NAME}_mate_sorted.bed
