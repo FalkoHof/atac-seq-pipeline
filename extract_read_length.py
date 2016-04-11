@@ -189,7 +189,7 @@ while True:
 if histogram:
     writeHistogramToFile(histoDict,filenameHisto, fragmentThreshold)
 #substract one becuase of reading asymetry
-lineCounter-=
+lineCounter-=1
 print('Number of mate pairs: ' + str(mateCounter) + '\tNumber of reads: ' + str(lineCounter))
 print('Number of blacklisted pairs: ' + str(blacklistCounter) + '\tNumber of reads: ' + str(lineCounter))
 print('Percentage of considered pairs: ' + str(((mateCounter*1.0)/(lineCounter/2.0)*100)))
