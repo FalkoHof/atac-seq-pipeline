@@ -20,13 +20,14 @@ bam_files_name_sorted=$bam_files_aligned/name_sorted
 bam_files_coordinate_sorted=$bam_files_aligned/coordinate_sorted
 bam_files_uniqe=$bam_files_aligned/unique
 bam_files_offsetted=$bam_files_aligned/offsetted
-
 #folders for bed files
 bed_files=$base_dir/bed_files
 #folders for temp files
 temp_dir=$base_dir/temp
 #folder for fastq files
 fastq_files=$base_dir/fastq
+fastq_pre=$fastq_files/pre_alignment
+fastq_post=$base_dir/post_alignment
 #folder for bowtie2 aligment logs
 log_files=$base_dir/logs
 #folder for fastqc files
@@ -37,12 +38,18 @@ bt2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col/Col
 tair10_genome_size=$pipe_dir/chromLength.txt
 #file that maps input file base names to pbs array number
 mapping_file=$base_dir/pbs_mapping_file.txt
+read_length_dir=$base_dir/read_length
 
 ####set to 0 (false) or 1 (true) to let the repsective code block run
+#1.2 align to genome
 mapping=0
+#2. convert sam to bam, keep only concordant mapped reads
 converting=1
+#3. do some post processing - remove duplicates, offset data for footprinting
+# and get extract length of mapped reads
 post_processing=1
-
+#4. delete unecessary files from temp_dir
+clean=0
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as the line number #####
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $mapping_file`
 names_mapped=($input_mapper)
@@ -56,6 +63,7 @@ module load Bowtie2/2.1.0-goolf-1.4.10
 module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
 module load FastQC/0.11.5-foss-2015a
+#module load Trim_Galore
 #module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 picard=/lustre/scratch/users/$USER/software/picard/picard-tools-2.2.1
@@ -70,10 +78,13 @@ mkdir -p $bam_files_uniqe
 mkdir -p $bam_files_offsetted
 
 mkdir -p $fastq_files
-mkdir -p $fastqc_output/${NAME}
+#mkdir -p $fastqc_output/${NAME}
+mkdir -p $fastq_pre/${NAME}
+mkdir -p $fastq_post/${NAME}
 
 mkdir -p $temp_dir
 mkdir -p $log_files
+mkdir -p $read_length_dir
 
 mkdir -p $bed_files
 
@@ -89,14 +100,19 @@ if [ $mapping -eq 1 ]; then
   echo "1.1 - Name sorting bam file... - Done"
   #1.2 run fastqc
   echo "1.2 - Running fastqc..."
-  fastqc -o $fastqc_output/${NAME} $bam_files_unmapped/${NAME}.sorted.bam
+  fastqc -o $fastqc_pre/${NAME} $bam_files_unmapped/${NAME}.sorted.bam
   echo "1.2 - Running fastqc... - Done"
   #1.3 convert bam to fq
   echo "1.3 - Converting bam to fastq..."
   bedtools bamtofastq -i $bam_files_unmapped/${NAME}.sorted.bam  \
     -fq $fastq_files/${NAME}.end1.fq  \
-      -fq2 $fastq_files/${NAME}.end2.fq
+    -fq2 $fastq_files/${NAME}.end2.fq
   echo "1.3 - Converting bam to fastq... - Done"
+  #trimming probably has negative effect on footprinting, so better dont trim
+  #echo "1.4 - Adapter trimming..."
+  #trim_galore --paired --nextera -s 3 $fastq_files/${NAME}.end1.fq \
+  #  $fastq_files/${NAME}.end2.fq
+  #echo "1.4 - Adapter trimming... Done"
   #1.4 align to genome
   echo "1.4 - Starting alignment with bowtie2..."
   bowtie2 --threads 8 \
@@ -114,12 +130,13 @@ fi
 if [ $converting -eq 1 ]; then
     #1.5 convert to bam, get mapped concordant mapped reads and and convert to bam
     samtools view -bS $temp_dir/${NAME}.sam > $temp_dir/${NAME}.bam
-    samtools view -hf 0x2 $temp_dir/${NAME}.bam > $temp_dir/${NAME}_concordant_only.bam
+    samtools view -bhf 0x2 $temp_dir/${NAME}.bam > $temp_dir/${NAME}_concordant_only.bam
     samtools sort -n -m 4G -@ 8 -o $bam_files_name_sorted/${NAME}.bam \
       $temp_dir/${NAME}_concordant_only.bam
     samtools sort -m 4G -@ 8 -o $bam_files_coordinate_sorted/${NAME}.bam \
       $temp_dir/${NAME}_concordant_only.bam
     #rm $temp_dir/${NAME}.sam
+    fastqc -o $fastqc_post/${NAME} $bam_files_coordinate_sorted/${NAME}.bam
     echo "1 - Finished mapping part."
 fi
 
@@ -149,9 +166,6 @@ if [ $post_processing  -eq 1 ]; then
   python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_mate_sorted.bed \
     $bed_files/${NAME}_offset.bed
 
-  rm $temp_dir/${NAME}_mate_sorted.bed
-  rm $temp_dir/${NAME}_unique_mate_sorted.bed
-
   #2.5 convert back to bam file
   bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
     | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_unique_offset.bam
@@ -159,13 +173,10 @@ if [ $post_processing  -eq 1 ]; then
     | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_offset.bam
   echo "2.4 - Offsetting data... - Done"
 
-  #echo "2.5 - Extracting read length..."
-  #TODO:implement for new script version
-  #run script to extract the read length per mate pair
-  #python extract_read_length.py.py $bed_files/${NAME}_unique.bed \
-  # $log_files/${NAME}readLength_bt2.tab
-  #sort -n -k2,2 -t $'\t' $WSEQ/${NAME}/bowtie/readLength_${NAME}_bt.tab > $WSEQ/${NAME}/bowtie/readLength_${NAME}_bt_sorted.tab
-  #echo "2.5 - Extracting read length... - Done"
+  echo "2.5 - Extracting read lenght..."
+  python extract_read_length.py -g -v -o "$read_length_dir" \
+    "$temp_dir/${NAME}_mate_sorted.bed"
+  echo "2.5 - Extracting read length... - Done"
   echo "2 - Finished post processing."
 fi
 #TODO: implement
@@ -177,4 +188,13 @@ fi
 #3.2.2 fseq
 #3.3 estimate library complexity via preseq
 #3.4 do footprinting
+if [ $clean  -eq 1 ]; then
+  echo "Cleaning up..."
+  rm $temp_dir/${NAME}_mate_sorted.bed
+  rm $temp_dir/${NAME}_unique_mate_sorted.bed
+  rm $temp_dir/${NAME}.sam
+  rm $fastq_files/${NAME}.end1.fq
+  rm $fastq_files/${NAME}.end2.fq
+  echo "Cleaning up... - Done"
+fi
 echo 'ATAC-seq pipeline complete.'

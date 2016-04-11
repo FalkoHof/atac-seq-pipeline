@@ -49,10 +49,10 @@ while True:
         end-=5
         if start < 0:
             start=0
-            print('Warning: ' + col[3] + 'start position ' + str(start) + '< 0'  + col[0])
+            print('Warning: ' + col[3] + 'start position ' + str(start) + '< 0 '  + col[0])
         if end < 0:
             end = 0
-            print('Warning: ' + col[3] + 'end position ' + str(end) + '< 0'  + col[0])
+            print('Warning: ' + col[3] + 'end position ' + str(end) + '< 0 '  + col[0])
 
 
     fout.write(col[0] + '\t' + str(start) + '\t' + str(end) + '\t' + col[3] + '\t' + col[4] + '\t' + col[5])

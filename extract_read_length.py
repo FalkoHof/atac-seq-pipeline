@@ -15,6 +15,7 @@ parser.add_argument("-g", "--histogram", action="store_true", help="export fragm
 parser.add_argument("-d", "--detailed", action="store_true", help="export detailed data in bed like format for each read",default=False)
 parser.add_argument("-v", "--verbose",action="store_true", help="information about the run is printed to stdout",default=False)
 parser.add_argument("-f", "--fragmentSize", help="set threshold for maximal fragment length (default: 2000 bp)",default=2000,type=int)
+parser.add_argument("-o", "--output", dest='output', help="set output directory", required=True, type=str)
 #parser.add_argument("-n", "--ncbi", action="store_true", help="specifies that the dataset is from ncbi)",default=False)
 parser.add_argument("input", help="BED file of the regions you want to generate calculate the distance for")
 args = parser.parse_args()
@@ -23,9 +24,10 @@ histogram = args.histogram
 detailedInfo = args.detailed
 fragmentThreshold = args.fragmentSize
 filenameInput = args.input
+outputDir = args.output
 #ncbi_file = args.ncbi
 
-blacklistChr = Set(['chrMT','Ath_chrc','Ath_chrm'])
+blacklistChr = Set(['Ath_chrc','Ath_chrm'])
 histoDict = dict()
 
 #inputFolder = '/Volumes/nodine/lab/members/falko/ATAC-SEQ/500cells_human/'
@@ -36,10 +38,11 @@ if not os.path.isfile(filenameInput):
     sys.exit('Input file does not exist!')
 
 #generate output filenames. Pattern is name.histogram or name.detailed_info
-def generateFilenames(filename):
+def generateFilenames(filename,outputDir):
     basename = os.path.splitext(filename)[0]
-    filenameHisto = basename + '.histogram'
-    filenameDetail =  basename + '.detailed_info'
+    outputPath = os.path.join(outputDir,basename)
+    filenameHisto = outputPath + '.histogram'
+    filenameDetail =  outputPath + '.detailed_info'
     return (filenameHisto, filenameDetail)
 
 #add +1 to a dict holding key, int value, othervise initilizea and set value =1
@@ -86,9 +89,8 @@ def getReadLength(read1, read2):
 def writeDetailedInfo(fout,id, chr, length, pos1, pos2):
     fout.write(id + '\t' + str(length) + '\t' + chr + '\t' + str(pos1) + '\t' + str(pos2) +'\n')
 
-
 #generate filenames for output
-filenameHisto, filenameDetail = generateFilenames(filenameInput)
+filenameHisto, filenameDetail = generateFilenames(filenameInput, outputDir)
 
 #open input file
 fin = open(filenameInput,'r')
@@ -101,6 +103,7 @@ if detailedInfo:
 #some counters for transparency
 lineCounter = 0
 mateCounter = 0
+blacklistCounter = 0
 
 #loop ove the input file as long as there are lines
 while True:
@@ -122,12 +125,12 @@ while True:
     mate2Cols = mate2.split('\t')
 
     #if ncbi:
-    mate1Id = (mate1Cols[3])
-    mate2Id = (mate2Cols[3])
+    #mate1Id = (mate1Cols[3])
+    #mate2Id = (mate2Cols[3])
 
     #else:
-    #    mate1Id = (mate1Cols[3])[:-2]
-    #    mate2Id = (mate2Cols[3])[:-2]
+    mate1Id = (mate1Cols[3])[:-2]
+    mate2Id = (mate2Cols[3])[:-2]
 
 
     #loop that skips 1 line as long ids are different, in case only 1 mate is present
@@ -161,7 +164,7 @@ while True:
         #check if any of the chromosomes has been blacklisted
     if not any(x in blacklistChr for x in chromosomes):
         #check if both chromosomes are the same
-        if chrMate1 in chrMate2:
+        if chrMate1 == chrMate2:
             mateCounter+=1
             readLength = getReadLength(mate1Cols,mate2Cols)
             #print some warnings of length is longer than threshold
@@ -179,13 +182,18 @@ while True:
         else:
             print('Warning: ' + mate1Id + ' reads map on differen chromosomes! ' + \
             str(mate1Cols[0]) +'\t' + mate2Cols[0]+ 'Skipping...')
-
+    else:
+        blacklistCounter+=1
 
 #write histogram to file, give some overview statistics and close everything
 if histogram:
     writeHistogramToFile(histoDict,filenameHisto, fragmentThreshold)
+#substract one becuase of reading asymetry
+lineCounter-=
 print('Number of mate pairs: ' + str(mateCounter) + '\tNumber of reads: ' + str(lineCounter))
-print('Percentage complete pairs: ' + str(((mateCounter*1.0)/(lineCounter/2.0)*100)))
+print('Number of blacklisted pairs: ' + str(blacklistCounter) + '\tNumber of reads: ' + str(lineCounter))
+print('Percentage of considered pairs: ' + str(((mateCounter*1.0)/(lineCounter/2.0)*100)))
+print('Number of pairs not accounted by blacklist: ' + str((lineCounter/2.0)-mateCounter-blacklistCounter))
 fin.close()
 if detailedInfo:
     detailFout.close()
