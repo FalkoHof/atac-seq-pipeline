@@ -124,7 +124,7 @@ if [ $converting -eq 1 ]; then
     samtools sort -m 4G -@ 8 -o $bam_files_coordinate_sorted/${NAME}.bam \
       $temp_dir/${NAME}_concordant_only.bam
     #rm $temp_dir/${NAME}.sam
-    fastqc -o $fastqc_post/${NAME} $bam_files_coordinate_sorted/${NAME}.bam
+    #fastqc -o $fastqc_post/${NAME} $bam_files_coordinate_sorted/${NAME}.bam
     echo "1 - Finished mapping part."
 fi
 
@@ -167,7 +167,7 @@ if [ $post_processing  -eq 1 ]; then
 
   echo "2.5 - Extracting read lenght..."
   python $pipe_dir/extract_read_length.py -g -v -o $read_length_dir \
-    $temp_dir/${NAME}_mate_sorted.bed
+    $bed_files/${NAME}.bed
   echo "2.5 - Extracting read length... - Done"
   echo "2 - Finished post processing."
 fi
@@ -175,7 +175,8 @@ fi
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
   rm $temp_dir/${NAME}.sam
-  rm $temp_dir/${NAME}_unique.bam
+  rm $temp_dir/*.bam
+  rm $temp_dir/*.bed
   rm $fastq_files/${NAME}.end1.fq
   rm $fastq_files/${NAME}.end2.fq
   echo "Cleaning up... - Done"
