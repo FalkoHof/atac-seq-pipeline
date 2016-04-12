@@ -39,7 +39,7 @@ if not os.path.isfile(filenameInput):
 
 #generate output filenames. Pattern is name.histogram or name.detailed_info
 def generateFilenames(filename,outputDir):
-    basename = os.path.splitext(filename)[0]
+    basename = os.path.splitext(os.path.basename(filename))[0]
     outputPath = os.path.join(outputDir,basename)
     filenameHisto = outputPath + '.histogram'
     filenameDetail =  outputPath + '.detailed_info'
@@ -151,11 +151,11 @@ while True:
         mate2Cols = mate2.split('\t')
 
         #if ncbi:
-        mate1Id = (mate1Cols[3])
-        mate2Id = (mate2Cols[3])
+        #mate1Id = (mate1Cols[3])
+        #mate2Id = (mate2Cols[3])
         #else:
-        #    mate1Id = (mate1Cols[3])[:-2]
-        #    mate2Id = (mate2Cols[3])[:-2]
+        mate1Id = (mate1Cols[3])[:-2]
+        mate2Id = (mate2Cols[3])[:-2]
 
     chrMate1 = mate1Cols[0]
     chrMate2 = mate2Cols[0]

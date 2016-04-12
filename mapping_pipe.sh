@@ -4,7 +4,7 @@
 #PBS -J 1-7
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/160410_atac-seq/160411_atac-seq_^array_index^_mapping.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/160411_atac-seq/160411_atac-seq_^array_index^_mapping.log
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
@@ -45,8 +45,8 @@ read_length_dir=$base_dir/read_length
 mapping=0
 #2. convert sam to bam, keep only concordant mapped reads
 converting=1
-#3. do some post processing - remove duplicates, offset data for footprinting
-# and get extract length of mapped reads
+#3. do some post processing
+remove_duplicates=0
 post_processing=1
 #4. delete unecessary files from temp_dir
 clean=0
@@ -141,7 +141,7 @@ if [ $converting -eq 1 ]; then
 fi
 
 ##2.file conversions, duplicates removal and offsetting
-if [ $post_processing  -eq 1 ]; then
+if [ $remove_duplicates  -eq 1 ]; then
   echo "2 - Starting post processing..."
   #2.1 remove duplicates
   echo "2.1 - Removing duplicates..."
@@ -150,6 +150,8 @@ if [ $post_processing  -eq 1 ]; then
     O=$bam_files_uniqe/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
     AS=true REMOVE_DUPLICATES=true TMP_DIR=$TMPDIR
   echo "2.1 - Removing duplicates... - Done"
+fi
+if [ $post_processing  -eq 1 ]; then
  #2.2 convert to bed file
   echo "2.2 - Converting bam to bed..."
   bedtools bamtobed -i $bam_files_uniqe/${NAME}_unique.bam > $bed_files/${NAME}_unique.bed
@@ -162,7 +164,7 @@ if [ $post_processing  -eq 1 ]; then
   #2.4 offset data
   echo "2.4 - Offsetting data..."
   python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_unique_mate_sorted.bed \
-    $bed_files/${NAME}_unique_offset.bed &
+    $bed_files/${NAME}_unique_offset.bed
   python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_mate_sorted.bed \
     $bed_files/${NAME}_offset.bed
 
