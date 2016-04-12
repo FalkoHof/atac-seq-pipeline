@@ -46,7 +46,7 @@ mapping=0
 #2. convert sam to bam, keep only concordant mapped reads
 converting=1
 #3. do some post processing
-remove_duplicates=0
+remove_duplicates=1
 post_processing=1
 #4. delete unecessary files from temp_dir
 clean=0
@@ -56,20 +56,16 @@ names_mapped=($input_mapper)
 NAME=${names_mapped[1]}
 
 ##### load modules and assign local repos#####
-#TODO: complete
 module load SAMtools/1.3-goolf-1.4.10
 module load BEDTools/v2.17.0-goolf-1.4.10
 module load Bowtie2/2.1.0-goolf-1.4.10
 module load Java/1.8.0_77
 module load Python/2.7.9-foss-2015a
 module load FastQC/0.11.5-foss-2015a
-#module load Trim_Galore
-#module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 picard=/lustre/scratch/users/$USER/software/picard/picard-tools-2.2.1
 
 ##### Make folders before starting the pipeline#####
-#TODO: complete
 mkdir -p $bam_files_unmapped
 mkdir -p $bam_files_aligned
 mkdir -p $bam_files_name_sorted
@@ -108,12 +104,6 @@ if [ $mapping -eq 1 ]; then
     -fq $fastq_files/${NAME}.end1.fq  \
     -fq2 $fastq_files/${NAME}.end2.fq
   echo "1.3 - Converting bam to fastq... - Done"
-  #trimming probably has negative effect on footprinting, so better dont trim
-  #echo "1.4 - Adapter trimming..."
-  #trim_galore --paired --nextera -s 3 $fastq_files/${NAME}.end1.fq \
-  #  $fastq_files/${NAME}.end2.fq
-  #echo "1.4 - Adapter trimming... Done"
-  #1.4 align to genome
   echo "1.4 - Starting alignment with bowtie2..."
   bowtie2 --threads 8 \
     --very-sensitive \
@@ -147,25 +137,27 @@ if [ $remove_duplicates  -eq 1 ]; then
   echo "2.1 - Removing duplicates..."
   java -jar -Xmx60g $picard/picard.jar MarkDuplicates \
     I=$bam_files_coordinate_sorted/${NAME}.bam \
-    O=$bam_files_uniqe/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
+    O=$temp_dir/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
     AS=true REMOVE_DUPLICATES=true TMP_DIR=$TMPDIR
   echo "2.1 - Removing duplicates... - Done"
+  #2.2 sort bam file
+  echo "2.2 - Sorting unique reads bam..."
+  samtools sort -n -m 4G -@ 8 -o $bam_files_uniqe/${NAME}_unique.bam \
+    $temp_dir/${NAME}_unique.bam
+  echo "2.2 - Sorting unique reads bam - Done..."
 fi
+
 if [ $post_processing  -eq 1 ]; then
- #2.2 convert to bed file
-  echo "2.2 - Converting bam to bed..."
+  echo "2.3 - Converting bam to bed..."
   bedtools bamtobed -i $bam_files_uniqe/${NAME}_unique.bam > $bed_files/${NAME}_unique.bed
   bedtools bamtobed -i $bam_files_name_sorted/${NAME}.bam > $bed_files/${NAME}.bed
-  echo "2.2 - Converting bam to bed... - Done"
-  #2.3 sort bed file by mate id
-  sort -k4,4 -t $'\t' $bed_files/${NAME}_unique.bed > $temp_dir/${NAME}_unique_mate_sorted.bed
-  sort -k4,4 -t $'\t' $bed_files/${NAME}.bed > $temp_dir/${NAME}_mate_sorted.bed
+  echo "2.3 - Converting bam to bed... - Done"
 
   #2.4 offset data
   echo "2.4 - Offsetting data..."
-  python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_unique_mate_sorted.bed \
+  python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_unique.bed \
     $bed_files/${NAME}_unique_offset.bed
-  python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_mate_sorted.bed \
+  python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}bed \
     $bed_files/${NAME}_offset.bed
 
   #2.5 convert back to bam file
@@ -176,8 +168,8 @@ if [ $post_processing  -eq 1 ]; then
   echo "2.4 - Offsetting data... - Done"
 
   echo "2.5 - Extracting read lenght..."
-  python $pipe_dir/extract_read_length.py -g -v -o "$read_length_dir" \
-    "$temp_dir/${NAME}_mate_sorted.bed"
+  python $pipe_dir/extract_read_length.py -g -v -o $read_length_dir \
+    $temp_dir/${NAME}_mate_sorted.bed
   echo "2.5 - Extracting read length... - Done"
   echo "2 - Finished post processing."
 fi
@@ -187,6 +179,7 @@ if [ $clean  -eq 1 ]; then
   rm $temp_dir/${NAME}_mate_sorted.bed
   rm $temp_dir/${NAME}_unique_mate_sorted.bed
   rm $temp_dir/${NAME}.sam
+  rm $temp_dir/${NAME}_unique.bam
   rm $fastq_files/${NAME}.end1.fq
   rm $fastq_files/${NAME}.end2.fq
   echo "Cleaning up... - Done"
