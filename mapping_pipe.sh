@@ -8,6 +8,8 @@
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
+
+# === begin ENVIRONMENT SETUP ===
 ##### specify folders and variables #####
 #set base dir
 pipe_dir=/lustre/scratch/users/$USER/pipes/atac-seq-pipeline
@@ -81,6 +83,7 @@ mkdir -p $log_files
 mkdir -p $read_length_dir
 
 mkdir -p $bed_files
+# === end ENVIRONMENT SETUP ===
 
 ##### Startint the ATAC-seq pipeline #####
 echo 'Starting ATAC-seq pipeline for '${NAME}
