@@ -18,7 +18,6 @@ bam_files_unmapped=$bam_files/unmapped
 bam_files_aligned=$bam_files/aligned
 bam_files_name_sorted=$bam_files_aligned/name_sorted
 bam_files_coordinate_sorted=$bam_files_aligned/coordinate_sorted
-bam_files_uniqe=$bam_files_aligned/unique
 bam_files_offsetted=$bam_files_aligned/offsetted
 #folders for bed files
 bed_files=$base_dir/bed_files
@@ -70,7 +69,6 @@ mkdir -p $bam_files_unmapped
 mkdir -p $bam_files_aligned
 mkdir -p $bam_files_name_sorted
 mkdir -p $bam_files_coordinate_sorted
-mkdir -p $bam_files_uniqe
 mkdir -p $bam_files_offsetted
 
 mkdir -p $fastq_files
@@ -137,27 +135,27 @@ if [ $remove_duplicates  -eq 1 ]; then
   echo "2.1 - Removing duplicates..."
   java -jar -Xmx60g $picard/picard.jar MarkDuplicates \
     I=$bam_files_coordinate_sorted/${NAME}.bam \
-    O=$temp_dir/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
+    O=$bam_files_coordinate_sorted/${NAME}_unique.bam M=$log_files/${NAME}_dup_metrics.txt \
     AS=true REMOVE_DUPLICATES=true TMP_DIR=$TMPDIR
   echo "2.1 - Removing duplicates... - Done"
   #2.2 sort bam file
   echo "2.2 - Sorting unique reads bam..."
-  samtools sort -n -m 4G -@ 8 -o $bam_files_uniqe/${NAME}_unique.bam \
-    $temp_dir/${NAME}_unique.bam
+  samtools sort -n -m 4G -@ 8 -o $bam_files_name_sorted/${NAME}_unique.bam \
+    $bam_files_coordinate_sorted/${NAME}_unique.bam
   echo "2.2 - Sorting unique reads bam - Done..."
 fi
 
 if [ $post_processing  -eq 1 ]; then
   echo "2.3 - Converting bam to bed..."
-  bedtools bamtobed -i $bam_files_uniqe/${NAME}_unique.bam > $bed_files/${NAME}_unique.bed
+  bedtools bamtobed -i $bam_files_name_sorted/${NAME}_unique.bam > $bed_files/${NAME}_unique.bed
   bedtools bamtobed -i $bam_files_name_sorted/${NAME}.bam > $bed_files/${NAME}.bed
   echo "2.3 - Converting bam to bed... - Done"
 
   #2.4 offset data
   echo "2.4 - Offsetting data..."
-  python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}_unique.bed \
+  python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}_unique.bed \
     $bed_files/${NAME}_unique_offset.bed
-  python $pipe_dir/add_offset_for_fp.py $temp_dir/${NAME}bed \
+  python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}.bed \
     $bed_files/${NAME}_offset.bed
 
   #2.5 convert back to bam file
@@ -176,8 +174,6 @@ fi
 #3. clean up and delete unecessary files
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
-  rm $temp_dir/${NAME}_mate_sorted.bed
-  rm $temp_dir/${NAME}_unique_mate_sorted.bed
   rm $temp_dir/${NAME}.sam
   rm $temp_dir/${NAME}_unique.bam
   rm $fastq_files/${NAME}.end1.fq
