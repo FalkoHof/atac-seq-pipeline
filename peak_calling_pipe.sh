@@ -54,15 +54,19 @@ bamtools filter -in $bam_files/${NAME}.bam -out $split_bam_files/${NAME}.polynuc
 #2. peak_call via macs2
 mkdir -p $output_macs2/no_control/
 macs2 callpeak -t $split_bam_files/${NAME}.subnucl.bam -f BAMPE \
-  -g $effective_genome_size -n ${NAME}_offset --outdir $output_macs2/no_control \
+  -g $effective_genome_size -n ${NAME}_subnucl --outdir $output_macs2/no_control \
+  --nomodel --shift -100 --extsize 200 -B -q 0.01
+
+macs2 callpeak -t $split_bam_files/${NAME}.subnucl.bam -c $control -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_subnucl_background --outdir $output_macs2/no_control \
   --nomodel --shift -100 --extsize 200 -B -q 0.01
 
 mkdir -p $output_macs2/control/narrow
-macs2 callpeak -t $split_bam_files/${NAME}.bam -c $control -f BAMPE \
-  -g $effective_genome_size -n ${NAME}_offset --outdir $output_macs2/control/narrow \
+macs2 callpeak -t $bam_files/${NAME}.bam -c $control -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_background --outdir $output_macs2/control/narrow \
   --nomodel --shift -100 --extsize 200 -B -q 0.01
 
 mkdir -p $output_macs2/control/broad
-macs2 callpeak --broad -t $split_bam_files/${NAME}.bam -c $control -f BAMPE \
-  -g $effective_genome_size -n ${NAME}_offset --outdir $output_macs2/control/broad \
+macs2 callpeak --broad -t $bam_files/${NAME}.bam -c $control -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_background --outdir $output_macs2/control/broad \
   --nomodel --shift -100 --extsize 200 -B -q 0.01
