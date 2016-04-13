@@ -22,7 +22,7 @@ esac
 
 
 #set base dirs
-base_dir=/lustre/scratch/users/falko.hofmann/atac_seq
+base_dir=/lustre/scratch/users/$USER/atac_seq
 pipe_dir=/lustre/scratch/users/$USER/pipes/atac-seq-pipeline
 
 bam_files=$base_dir/bam_files/aligned/name_sorted
@@ -40,6 +40,7 @@ mdkir -p $split_bam_files
 
 # === begin ENVIRONMENT SETUP ===
 # Load the required modules
+module load SAMtools/1.3-goolf-1.4.10
 module load BamTools/2.4.0-goolf-1.4.10
 module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 # === end ENVIRONMENT SETUP ===
