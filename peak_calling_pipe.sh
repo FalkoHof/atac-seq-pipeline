@@ -36,7 +36,7 @@ effective_genome_size=1.2e8
 
 #make folders
 mkdir -p $output_macs2
-mdkir -p $split_bam_files
+mkdir -p $split_bam_files
 
 # === begin ENVIRONMENT SETUP ===
 # Load the required modules
