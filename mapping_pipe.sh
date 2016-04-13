@@ -43,7 +43,7 @@ read_length_dir=$base_dir/read_length
 
 ####set to 0 (false) or 1 (true) to let the repsective code block run
 #1.2 align to genome
-mapping=0
+mapping=1
 #2. convert sam to bam, keep only concordant mapped reads
 converting=1
 #3. do some post processing
