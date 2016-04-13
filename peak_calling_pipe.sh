@@ -8,16 +8,9 @@
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
-effective_genome_size=116e6
-control=50k_bc_background_160326
-output_dir=
-
 # === begin ENVIRONMENT SETUP ===
-# Load the required modules
-module load BamTools/2.4.0-goolf-1.4.10
-module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
-# === end ENVIRONMENT SETUP ===
 
+#pbs array for different samples
 case ${PBS_ARRAY_INDEX} in
         1) NAME='100k_bc_160326';;
         2) NAME='75k_bc_160326';;
@@ -28,35 +21,47 @@ case ${PBS_ARRAY_INDEX} in
 esac
 
 
-#2. peak_call via macs2
-mkdir -p $output_dir/no_control
+#set base dirs
+base_dir=/lustre/scratch/users/falko.hofmann/atac_seq
+pipe_dir=/lustre/scratch/users/$USER/pipes/atac-seq-pipeline
 
-macs2 callpeak -t ${NAME}.subnucl.bam -f BAMPE -g $effective_genome_size\
-  -n ${NAME}_offset --outdir $output_dir/no_control \
+bam_files=$base_dir/bam_files/aligned/name_sorted
+
+output_macs2=$base_dir/peak_calling
+split_bam_files=$bam_files/split_bam
+
+#set background control path and effective genome length for macs2
+control=$bam_files/50k_bc_background_160326.bam
+effective_genome_size=1.2e8
+
+#make folders
+mkdir -p $output_macs2
+mdkir -p $split_bam_files
+
+# === begin ENVIRONMENT SETUP ===
+# Load the required modules
+module load BamTools/2.4.0-goolf-1.4.10
+module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
+# === end ENVIRONMENT SETUP ===
+
+#1.filter bam
+bamtools filter -in $bam_files/${NAME}.bam -out $split_bam_files/${NAME}.subnucl.bam \
+  -script $pipe_dir/bamtools_filter/filter_subnucleo.json
+bamtools filter -in $bam_files/${NAME}.bam -out $split_bam_files/${NAME}.polynucl.bam \
+  -script $pipe_dir/bamtools_filter/filter_nucleo.json
+
+#2. peak_call via macs2
+mkdir -p $output_macs2/no_control/
+macs2 callpeak -t $split_bam_files/${NAME}.subnucl.bam -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_offset --outdir $output_macs2/no_control \
   --nomodel --shift -100 --extsize 200 -B -q 0.01
 
+mkdir -p $output_macs2/control/narrow
+macs2 callpeak -t $split_bam_files/${NAME}.bam -c $control -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_offset --outdir $output_macs2/control/narrow \
+  --nomodel --shift -100 --extsize 200 -B -q 0.01
 
-mkdir -p $output_dir/control/narrow
-macs2 callpeak -t ${NAME}.bam -c $control -f BAMPE -g $effective_genome_size\
-    -n ${NAME}_offset --outdir $output_dir/no_model \
-    --nomodel --shift -100 --extsize 200 -B -q 0.01
-
-
-mkdir -p $output_dir/broad
-macs2 callpeak --broad -t ${NAME}.bam -c $control -f BAM -g $effective_genome_size \
-  -n ${NAME} --broad-cutoff 0.1 –outdir $output_dir/with_model
-
-macs2 callpeak --broad -t ${NAME}.bam -c $control -f BAMPE -g $effective_genome_size\
-      -n ${NAME}_offset --outdir $output_dir/no_model \
-      --nomodel --shift -100 --extsize 200 -B -q 0.01
-
-#2. peak_call via fseq
-fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
-
-#2.1 split file into multiple bed files
-
-#2.2 build wig files
-
-
-
-fseq
+mkdir -p $output_macs2/control/broad
+macs2 callpeak --broad -t $split_bam_files/${NAME}.bam -c $control -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_offset --outdir $output_macs2/control/broad \
+  --nomodel --shift -100 --extsize 200 -B -q 0.01
