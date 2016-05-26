@@ -1,10 +1,10 @@
 #!/bin/bash
 #PBS -P rnaseq_nod
 #PBS -N atac-seq_mapping
-#PBS -J 1-7
+#PBS -J 1-12
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/160411_atac-seq/160411_atac-seq_^array_index^_mapping.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/160526_atac-seq/160526_atac-seq_^array_index^_mapping.log
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
@@ -48,7 +48,7 @@ mapping=1
 converting=1
 #3. do some post processing
 remove_duplicates=1
-post_processing=0
+post_processing=1
 #4. delete unecessary files from temp_dir
 clean=0
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as the line number #####
@@ -74,7 +74,7 @@ mkdir -p $bam_files_coordinate_sorted
 mkdir -p $bam_files_offsetted
 
 mkdir -p $fastq_files
-#mkdir -p $fastqc_output/${NAME}
+mkdir -p $fastqc_output/${NAME}
 mkdir -p $fastq_pre/${NAME}
 mkdir -p $fastq_post/${NAME}
 
@@ -120,8 +120,8 @@ if [ $mapping -eq 1 ]; then
 fi
 if [ $converting -eq 1 ]; then
     #1.5 convert to bam, get mapped concordant mapped reads and and convert to bam
-    samtools view -bS $temp_dir/${NAME}.sam > $temp_dir/${NAME}.bam
-    samtools view -bhf 0x2 $temp_dir/${NAME}.bam > $temp_dir/${NAME}_concordant_only.bam
+    samtools view -hb -o $temp_dir/${NAME}.bam $temp_dir/${NAME}.sam
+    samtools view -bhf 0x2 -o $temp_dir/${NAME}_concordant_only.bam $temp_dir/${NAME}.bam
     samtools sort -n -m 4G -@ 8 -o $bam_files_name_sorted/${NAME}.bam \
       $temp_dir/${NAME}_concordant_only.bam
     samtools sort -m 4G -@ 8 -o $bam_files_coordinate_sorted/${NAME}.bam \
@@ -168,10 +168,10 @@ if [ $post_processing  -eq 1 ]; then
   #  | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_offset.bam
   #echo "2.4 - Offsetting data... - Done"
 
-  echo "2.5 - Extracting read length..."
+  echo "2.4 - Extracting read length..."
   python $pipe_dir/extract_read_length.py -g -v -o $read_length_dir \
     $bed_files/${NAME}.bed
-  echo "2.5 - Extracting read length... - Done"
+  echo "2.4 - Extracting read length... - Done"
   echo "2 - Finished post processing."
 fi
 #3. clean up and delete unecessary files
