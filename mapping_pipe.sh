@@ -48,7 +48,7 @@ mapping=1
 converting=1
 #3. do some post processing
 remove_duplicates=1
-post_processing=1
+post_processing=0
 #4. delete unecessary files from temp_dir
 clean=0
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as the line number #####
@@ -127,7 +127,7 @@ if [ $converting -eq 1 ]; then
     samtools sort -m 4G -@ 8 -o $bam_files_coordinate_sorted/${NAME}.bam \
       $temp_dir/${NAME}_concordant_only.bam
     #rm $temp_dir/${NAME}.sam
-    #fastqc -o $fastqc_post/${NAME} $bam_files_coordinate_sorted/${NAME}.bam
+    fastqc -o $fastqc_post/${NAME} $bam_files_coordinate_sorted/${NAME}.bam
     echo "1 - Finished mapping part."
 fi
 
@@ -155,20 +155,20 @@ if [ $post_processing  -eq 1 ]; then
   echo "2.3 - Converting bam to bed... - Done"
 
   #2.4 offset data
-  echo "2.4 - Offsetting data..."
-  python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}_unique.bed \
-    $bed_files/${NAME}_unique_offset.bed
-  python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}.bed \
-    $bed_files/${NAME}_offset.bed
+  #echo "2.4 - Offsetting data..."
+  #python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}_unique.bed \
+  #  $bed_files/${NAME}_unique_offset.bed
+  #python $pipe_dir/add_offset_for_fp.py $bed_files/${NAME}.bed \
+  #  $bed_files/${NAME}_offset.bed
 
   #2.5 convert back to bam file
-  bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
-    | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_unique_offset.bam
-  bedToBam -i $bed_files/${NAME}_offset.bed -g $tair10_genome_size \
-    | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_offset.bam
-  echo "2.4 - Offsetting data... - Done"
+  #bedToBam -i $bed_files/${NAME}_unique_offset.bed -g $tair10_genome_size \
+  #  | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_unique_offset.bam
+  #bedToBam -i $bed_files/${NAME}_offset.bed -g $tair10_genome_size \
+  #  | samtools sort -m 4G -@ 8 -o $bam_files_offsetted/${NAME}_offset.bam
+  #echo "2.4 - Offsetting data... - Done"
 
-  echo "2.5 - Extracting read lenght..."
+  echo "2.5 - Extracting read length..."
   python $pipe_dir/extract_read_length.py -g -v -o $read_length_dir \
     $bed_files/${NAME}.bed
   echo "2.5 - Extracting read length... - Done"
