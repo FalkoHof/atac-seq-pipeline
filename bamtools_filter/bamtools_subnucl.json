@@ -1,0 +1,9 @@
+{
+"filters" : [
+{ "id" : "lower", "insertSize" : "<=100"
+},
+{ "id" : "upper", "insertSize" : ">=-100"
+}
+],
+"rule" : " lower & upper "
+}

@@ -1,0 +1,13 @@
+{
+"filters" : [
+{ "id" : "lower+", "insertSize" : ">=180"
+},
+{ "id" : "upper+", "insertSize" : "<=540"
+},
+{ "id" : "lower-", "insertSize" : "<=-180"
+},
+{ "id" : "upper-", "insertSize" : ">=-540"
+}
+],
+"rule" : " lower+ & upper+ | lower- & upper- "
+}

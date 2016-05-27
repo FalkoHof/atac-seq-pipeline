@@ -54,9 +54,9 @@ module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 #1.filter bam
 bamtools filter -in $bam_files/${NAME}.bam -out $split_bam_files/${NAME}.subnucl.bam \
-  -script $pipe_dir/bamtools_filter/filter_subnucleo.json
+  -script $pipe_dir/bamtools_filter/bamtools_subnucl.json
 bamtools filter -in $bam_files/${NAME}.bam -out $split_bam_files/${NAME}.polynucl.bam \
-  -script $pipe_dir/bamtools_filter/filter_nucleo.json
+  -script $pipe_dir/bamtools_filter/bamtools_polynucl.json
 
 #samtools sort -n -m 4G -@ 8 -o $split_bam_files/${NAME}.subnucl.bam \
 #  $split_bam_files/${NAME}.subnucl.bam
