@@ -18,7 +18,7 @@ case ${PBS_ARRAY_INDEX} in
         4) NAME='tp_100_proto_160516';;
         5) NAME='test_1';;
         6) NAME='test_2';;
-#esac
+esac
 
 #set base dirs
 base_dir=/lustre/scratch/users/$USER/atac_seq
@@ -67,6 +67,10 @@ bamtools filter -in $bam_files/${NAME}.bam -out $split_bam_files/${NAME}.polynuc
 
 #2. peak_call via macs2
 mkdir -p $output_macs2/narrow/
+
+export TMPDIR=$WORKDIR/macs_tmp
+# make sure the directory exists
+mkdir -p $TMPDIR
 
 macs2 callpeak -t $split_bam_files/${NAME}.subnucl.bam -f BAMPE \
   -g $effective_genome_size -n ${NAME}_subnucl --outdir $output_macs2/no_control \
