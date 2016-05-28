@@ -45,7 +45,8 @@ split_bam_coordiante=$bam_files_coordinate_sorted/split_bam
 effective_genome_size=1.2e8
 
 #make folders
-mkdir -p $output_macs2
+mkdir -p $output_macs2/narrow
+mkdir -p $output_macs2/broad
 mkdir -p $split_bam_files
 mkdir -p $split_bam_coordiante
 
@@ -75,11 +76,10 @@ export TMPDIR=$WORKDIR/macs_tmp
 # make sure the directory exists
 mkdir -p $TMPDIR
 
-macs2 callpeak -t $split_bam_files/${NAME}.subnucl.bam -f BAMPE \
-  -g $effective_genome_size -n ${NAME}_subnucl --outdir $output_macs2 \
-  --nomodel --shift -50 --extsize 100 -B -q 0.01
+#macs2 callpeak -t $split_bam_files/${NAME}.subnucl.bam -f BAMPE \
+#  -g $effective_genome_size -n ${NAME}_subnucl --outdir $output_macs2/narrow \
+#  --nomodel --shift -50 --extsize 100 -B -q 0.01
 
-#mkdir -p $output_macs2/control/broad
-#macs2 callpeak --broad -t $bam_files/${NAME}.bam -c $control -f BAMPE \
-#  -g $effective_genome_size -n ${NAME}_background --outdir $output_macs2/control/broad \
-#  --nomodel --shift -100 --extsize 200 -B -q 0.01
+macs2 callpeak --broad -t $split_bam_files/${NAME}.polynucl.bam -c $control -f BAMPE \
+  -g $effective_genome_size -n ${NAME}_background --outdir $output_macs2/broad \
+  --nomodel --shift -37 --extsize 73 -B -q 0.01
