@@ -86,7 +86,7 @@ mkdir -p $bed_files
 # === end ENVIRONMENT SETUP ===
 
 ##### Startint the ATAC-seq pipeline #####
-echo 'Starting ATAC-seq pipeline for '${NAME}
+echo 'Starting mapping ATAC-seq pipeline for '${NAME}
 ##1.mapping
 if [ $mapping -eq 1 ]; then
   echo "1 - Start mapping part..."
@@ -184,4 +184,4 @@ if [ $clean  -eq 1 ]; then
   rm $fastq_files/${NAME}.end2.fq
   echo "Cleaning up... - Done"
 fi
-echo 'ATAC-seq pipeline complete.'
+echo 'ATAC-seq mapping pipeline complete.'
