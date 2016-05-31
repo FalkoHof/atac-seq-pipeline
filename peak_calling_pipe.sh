@@ -60,7 +60,7 @@ module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 module load BEDTools/v2.17.0-goolf-1.4.10
 module load Java/1.8.0_66
 #download and compile fseq from git & set max heap space in fseq binary
-fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin
+fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
 # === end ENVIRONMENT SETUP ===
 
 ##### Startint the ATAC-seq peak calling pipeline #####
