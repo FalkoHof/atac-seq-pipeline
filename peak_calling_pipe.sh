@@ -99,7 +99,7 @@ if [ $run_fseq -eq 1 ]; then
   echo "2 - Starting fseq peak calling..."
   #make ouput folders
   mkdir -p $split_bed_files
-  mkdir -p $output_fseq
+  mkdir -p $output_fseq/${NAME}
   #2.1 convert subnucleosomal bam to bed file for fseq
   echo "2.1 - Converting bam to bed..."
   bedtools bamtobed -i $split_bam_coordiante/${NAME}.subnucl.bam \
@@ -107,9 +107,15 @@ if [ $run_fseq -eq 1 ]; then
   echo "2.1 - Converting bam to bed... - Done"
   #2.2 call peaks with fseq
   echo "2.2 - Calling peaks with fseq"
-  sh fseq -v -f 0 -of npf -t 2.0 -o $output_fseq \
+  sh $fseq -v -f 0 -of npf -t 1.0 -o $output_fseq/${NAME} \
     $split_bed_files/${NAME}.subnucl.bed
   echo "2.2 - Calling peaks with fseq... - Done"
+  echo "2.3 - Cleaning up..."
+  #concatenate nuclear chromosomes to one file
+  cat `ls | grep "[1-5].npf"` | sort -k 1,1 -k2,2n > $output_fseq/${NAME}_fseq.np
+  #clean up and remove unecessary files
+  rm -vr $output_fseq/${NAME}
+  echo "2.3 - Cleaning up... - Done"
 fi
 
 #3. peak calling via macs2
