@@ -112,7 +112,8 @@ if [ $run_fseq -eq 1 ]; then
   echo "2.2 - Calling peaks with fseq... - Done"
   echo "2.3 - Cleaning up..."
   #concatenate nuclear chromosomes to one file
-  cat `ls | grep "[1-5].npf"` | sort -k 1,1 -k2,2n > $output_fseq/${NAME}_fseq.np
+  cat `ls | grep -e "Ath_chr[1-5].npf"` | sort -k 1,1 -k2,2n \
+    > $output_fseq/${NAME}_fseq.np
   #clean up and remove unecessary files
   rm -vr $output_fseq/${NAME}
   echo "2.3 - Cleaning up... - Done"
