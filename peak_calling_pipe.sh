@@ -60,7 +60,7 @@ module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 module load Java/1.8.0_66
 #download and compile fseq from git & set max heap space in fseq binary
-fseq=/lustre/scratch/users/$USER/software/f-seq/fseq
+fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin
 # === end ENVIRONMENT SETUP ===
 
 ##### Startint the ATAC-seq peak calling pipeline #####
@@ -107,7 +107,7 @@ if [ $run_fseq -eq 1 ]; then
   echo "2.1 - Converting bam to bed... - Done"
   #2.2 call peaks with fseq
   echo "2.2 - Calling peaks with fseq"
-  fseq -v -f 0 -of npf -t 2.0 -o $output_fseq \
+  sh fseq -v -f 0 -of npf -t 2.0 -o $output_fseq \
     $split_bed_files/${NAME}.subnucl.bed
   echo "2.2 - Calling peaks with fseq... - Done"
 fi
