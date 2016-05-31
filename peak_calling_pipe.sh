@@ -11,7 +11,7 @@
 # === begin ENVIRONMENT SETUP ===
 ####set to 0 (false) or 1 (true) to let the repsective code block run
 #1.split and filter bam files
-filter_bam=1
+filter_bam=0
 #2. peak calling via fseq
 run_fseq=1
 #3. peak calling via macs2
@@ -57,7 +57,7 @@ effective_genome_size=1.2e8
 module load SAMtools/1.3-goolf-1.4.10
 module load BamTools/2.4.0-goolf-1.4.10
 module load MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
-
+module load BEDTools/v2.17.0-goolf-1.4.10
 module load Java/1.8.0_66
 #download and compile fseq from git & set max heap space in fseq binary
 fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin
