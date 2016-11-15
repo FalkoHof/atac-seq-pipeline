@@ -39,6 +39,7 @@ sample_dir=${names_mapped[1]} # get the sample dir
 sample_name=`basename $sample_dir` #get the base name of the dir as sample name
 
 temp_dir=$temp_dir_base/sample_name
+
 mkdir -p $temp_dir
 
 #print some output for logging
@@ -66,15 +67,21 @@ if [[ "${#f[@]}" -ne "1" ]]; then
   error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
 fi
 
+fastq_dir=$sample_dir/fastq
+
+mkdir -p $fastq_dir
+
 if [ $convert_bam -eq 1 ]; then
   echo "Converting bam to fastq..."
+
+  mkdir -p $sample_dir/fastq
   #do the sorting....
-  samtools sort -n -m 4G -@ $threads -o $sample_dir/${f%.*}.sorted.bam \
+  samtools sort -n -m 4G -@ $threads -o $fastq_dir/${f%.*}.sorted.bam \
     $sample_dir/$f
 
-  bedtools bamtofastq -i $sample_dir/${f%.*}.sorted.bam  \
-    -fq $sample_dir/${f%.*}.1.fq  \
-    -fq2 $sample_dir/${f%.*}.2.fq
+  bedtools bamtofastq -i $fastq_dir/${f%.*}.sorted.bam  \
+    -fq $fastq_dir/${f%.*}.1.fq  \
+    -fq2 $fastq_dir/${f%.*}.2.fq
   echo "Converting bam to fastq... - Done"
 fi
 
@@ -89,8 +96,8 @@ if [ $align -eq 1 ]; then
       --very-sensitive \
       --maxins 2000 \
       -x $bt2_index \
-      -1 $sample_dir/${f%.*}.1.fq \
-      -2 $sample_dir/${f%.*}.2.fq \
+      -1 $fastq_dir/${f%.*}.1.fq \
+      -2 $fastq_dir/${f%.*}.2.fq \
       -S $sample_dir/$aligner/${f%.*}.sam \
       2> $sample_dir/$aligner/${f%.*}_bt2_summary.txt
     echo "Aligning with bowtie2... - Done"
@@ -118,8 +125,8 @@ if [ $align -eq 1 ]; then
       -X 2000 \
       -m 1 \
       -S $bt_1_index \
-      -1 $sample_dir/${f%.*}.1.fq \
-      -2 $sample_dir/${f%.*}.2.fq \
+      -1 $fastq_dir/${f%.*}.1.fq \
+      -2 $fastq_dir/${f%.*}.2.fq \
       $sample_dir/$aligner/${f%.*}.sam \
       2> $sample_dir/$aligner/${f%.*}_bt_summary.txt
       echo "Aligning with bowtie... - Done"
