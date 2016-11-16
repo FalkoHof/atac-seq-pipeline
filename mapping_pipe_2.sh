@@ -1,21 +1,19 @@
 #!/bin/bash
 #PBS -P rnaseq_nod
 #PBS -N atac-seq_mapping
-#PBS -J 1-12
+#PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/161115_atac-seq/161115_atac-seq_^array_index^_mapping.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/161116_atac-seq/161116_atac-seq_^array_index^_mapping.log
 #PBS -l walltime=24:00:00
-#PBS -l select=1:ncpus=8:mem=64gb
+#PBS -l select=1:ncpus=16:mem=64gb
 
 pipe_dir=/lustre/scratch/users/$USER/pipelines/atac-seq-pipeline
 #set ouput base dir
 base_dir=/lustre/scratch/users/$USER/atac-seq
 #folder for bowtie indices
-#TODO add last path
 bt_1_index=/lustre/scratch/users/$USER/indices/bowtie/Col-0
 bt_2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col-0
-
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
@@ -24,13 +22,13 @@ temp_dir_base=$base_dir/temp
 #convert bam to fastq
 convert_bam=1
 #delete unecessary files
-clean=1
+clean=0
 #specfify if alignment should be run
 align=1
 #specify aligner
-aligner=bowtie2
+#aligner=bowtie2
 #specify number of threads
-threads=8 #set this to the number of available cores
+threads=16 #set this to the number of available cores
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as line number
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $pbs_mapping_file` #read mapping file
@@ -57,8 +55,11 @@ function error_exit
   exit 1
 }
 
+
+#load some modules...
 ml SAMtools/1.3.1-foss-2015b
 ml BEDTools/2.26.0-foss-2015b
+ml picard/2.3.0
 
 # get all bam files in folder
 f=($(ls $sample_dir | grep -e ".bam"))
@@ -76,7 +77,7 @@ if [ $convert_bam -eq 1 ]; then
 
   mkdir -p $sample_dir/fastq
   #do the sorting....
-  samtools sort -n -m 4G -@ $threads -o $fastq_dir/${f%.*}.sorted.bam \
+  samtools sort -n -m 3G -@ $threads -o $fastq_dir/${f%.*}.sorted.bam \
     $sample_dir/$f
 
   bedtools bamtofastq -i $fastq_dir/${f%.*}.sorted.bam  \
@@ -87,7 +88,7 @@ fi
 
 
 if [ $align -eq 1 ]; then
-  if [ "$aligner" == "bowtie2" ]; then
+  #if [ "$aligner" == "bowtie2" ]; then
 
     echo "Aligning with bowtie2..."
     mkdir -p $sample_dir/$aligner
@@ -104,7 +105,7 @@ if [ $align -eq 1 ]; then
 
     echo "Converting to bam..."
     samtools view -bhf 0x2 $sample_dir/$aligner/${f%.*}.sam | \
-      samtools sort -m 4G -@ $threads -  -o $sample_dir/$aligner/${f%.*}.bam
+      samtools sort -m 3G -@ $threads - -o $sample_dir/$aligner/${f%.*}.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
@@ -114,9 +115,9 @@ if [ $align -eq 1 ]; then
       M=$sample_dir/$aligner/${f%.*}_bt2_dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
-  fi
+  #fi
 
-  if [ "$aligner" == "bowtie" ]; then
+  #if [ "$aligner" == "bowtie" ]; then
 
     echo "Aligning with bowtie..."
     mkdir -p $sample_dir/$aligner
@@ -133,7 +134,7 @@ if [ $align -eq 1 ]; then
 
       echo "Converting to bam..."
       samtools view -bhf 0x2 $sample_dir/$aligner/${f%.*}.sam | \
-        samtools sort -m 4G -@ $threads - -o $sample_dir/$aligner/${f%.*}.bam
+        samtools sort -m 3G -@ $threads - -o $sample_dir/$aligner/${f%.*}.bam
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
@@ -143,7 +144,7 @@ if [ $align -eq 1 ]; then
         M=$sample_dir/$aligner/${f%.*}_bt_dup_metrics.txt \
         AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
       echo "Removing duplicates... - Done"
-  fi
+  #fi
 fi
 
 if [ $clean  -eq 1 ]; then
