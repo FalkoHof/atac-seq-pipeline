@@ -4,7 +4,7 @@
 #PBS -J 1-12
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/160526_atac-seq/160526_atac-seq_^array_index^_mapping.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/161115_atac-seq/161115_atac-seq_^array_index^_mapping.log
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=64gb
 
@@ -13,8 +13,8 @@ pipe_dir=/lustre/scratch/users/$USER/pipelines/atac-seq-pipeline
 base_dir=/lustre/scratch/users/$USER/atac-seq
 #folder for bowtie indices
 #TODO add last path
-bt_1_index=/lustre/scratch/users/$USER/indices/bowtie/
-bt_2_index=/lustre/scratch/users/$USER/indices/bowtie2/
+bt_1_index=/lustre/scratch/users/$USER/indices/bowtie/Col-0
+bt_2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col-0
 
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
@@ -104,7 +104,7 @@ if [ $align -eq 1 ]; then
 
     echo "Converting to bam..."
     samtools view -bhf 0x2 $sample_dir/$aligner/${f%.*}.sam | \
-      samtools sort -m 4G -@ $threads - $sample_dir/$aligner/${f%.*}.bam
+      samtools sort -m 4G -@ $threads -  -o $sample_dir/$aligner/${f%.*}.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
@@ -133,7 +133,7 @@ if [ $align -eq 1 ]; then
 
       echo "Converting to bam..."
       samtools view -bhf 0x2 $sample_dir/$aligner/${f%.*}.sam | \
-        samtools sort -m 4G -@ $threads - $sample_dir/$aligner/${f%.*}.bam
+        samtools sort -m 4G -@ $threads - -o $sample_dir/$aligner/${f%.*}.bam
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
