@@ -91,7 +91,7 @@ if [ $align -eq 1 ]; then
   #if [ "$aligner" == "bowtie2" ]; then
 
     echo "Aligning with bowtie2..."
-    mkdir -p $sample_dir/$aligner
+    mkdir -p $sample_dir/bowtie2
     ml Bowtie2/2.2.7-foss-2015b
     bowtie2 --threads $threads \
       --very-sensitive \
@@ -99,20 +99,20 @@ if [ $align -eq 1 ]; then
       -x $bt_2_index \
       -1 $fastq_dir/${f%.*}.1.fq \
       -2 $fastq_dir/${f%.*}.2.fq \
-      -S $sample_dir/$aligner/${f%.*}.sam \
-      2> $sample_dir/$aligner/${f%.*}_bt2_summary.txt
+      -S $sample_dir/bowtie2/${f%.*}.sam \
+      2> $sample_dir/bowtie2/${f%.*}_bt2_summary.txt
     echo "Aligning with bowtie2... - Done"
 
     echo "Converting to bam..."
-    samtools view -bhf 0x2 $sample_dir/$aligner/${f%.*}.sam | \
-      samtools sort -m 3G -@ $threads - -o $sample_dir/$aligner/${f%.*}.bam
+    samtools view -bhf 0x2 $sample_dir/bowtie2/${f%.*}.sam | \
+      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
     java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-      I=$sample_dir/$aligner/${f%.*}.bam \
-      O=$sample_dir/$aligner/${f%.*}.unique.bam \
-      M=$sample_dir/$aligner/${f%.*}_bt2_dup_metrics.txt \
+      I=$sample_dir/bowtie2/${f%.*}.bam \
+      O=$sample_dir/bowtie2/${f%.*}.unique.bam \
+      M=$sample_dir/bowtie2/${f%.*}_bt2_dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
   #fi
@@ -120,7 +120,7 @@ if [ $align -eq 1 ]; then
   #if [ "$aligner" == "bowtie" ]; then
 
     echo "Aligning with bowtie..."
-    mkdir -p $sample_dir/$aligner
+    mkdir -p $sample_dir/bowtie
     ml Bowtie/1.1.2-foss-2015b
     bowtie  --threads $threads \
       -X 2000 \
@@ -128,20 +128,20 @@ if [ $align -eq 1 ]; then
       -S $bt_1_index \
       -1 $fastq_dir/${f%.*}.1.fq \
       -2 $fastq_dir/${f%.*}.2.fq \
-      $sample_dir/$aligner/${f%.*}.sam \
-      2> $sample_dir/$aligner/${f%.*}_bt_summary.txt
+      $sample_dir/bowtie/${f%.*}.sam \
+      2> $sample_dir/bowtie/${f%.*}_bt_summary.txt
       echo "Aligning with bowtie... - Done"
 
       echo "Converting to bam..."
-      samtools view -bhf 0x2 $sample_dir/$aligner/${f%.*}.sam | \
-        samtools sort -m 3G -@ $threads - -o $sample_dir/$aligner/${f%.*}.bam
+      samtools view -bhf 0x2 $sample_dir/bowtie/${f%.*}.sam | \
+        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
       java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-        I=$sample_dir/$aligner/${f%.*}.bam \
-        O=$sample_dir/$aligner/${f%.*}.unique.bam \
-        M=$sample_dir/$aligner/${f%.*}_bt_dup_metrics.txt \
+        I=$sample_dir/bowtie/${f%.*}.bam \
+        O=$sample_dir/bowtie/${f%.*}.unique.bam \
+        M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
         AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
       echo "Removing duplicates... - Done"
   #fi
