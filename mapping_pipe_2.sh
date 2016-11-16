@@ -95,7 +95,7 @@ if [ $align -eq 1 ]; then
     bowtie2 --threads $threads \
       --very-sensitive \
       --maxins 2000 \
-      -x $bt2_index \
+      -x $bt_2_index \
       -1 $fastq_dir/${f%.*}.1.fq \
       -2 $fastq_dir/${f%.*}.2.fq \
       -S $sample_dir/$aligner/${f%.*}.sam \
