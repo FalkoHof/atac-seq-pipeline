@@ -100,6 +100,8 @@ fi
 ##### Starting the ATAC-seq peak calling pipeline #####
 for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
 
+  echo "Running pipeline for aligner: ${aligner_dirs[$i]##/*/}"
+
   f=($(ls ${aligner_dirs[$i]} | grep -e ".sorted.bam"))
 
   if [[ "${#f[@]}" -ne "1" ]]; then
