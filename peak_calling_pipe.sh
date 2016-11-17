@@ -9,13 +9,15 @@
 #PBS -l select=1:ncpus=8:mem=34gb
 
 # === begin ENVIRONMENT SETUP ===
+#some parameters on what to execute.
+bowtie_1=1
+bowtie_2=1
+#set to the number of available cores
+threads=8
+#path from which the script is exectuted
 pipe_dir=/lustre/scratch/users/$USER/pipelines/atac-seq-pipeline
 #set ouput base dir
 base_dir=/lustre/scratch/users/$USER/atac-seq
-#TODO: specify paths here...
-threads=8
-#download and compile fseq from git & set max heap space in fseq exectuable
-fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
@@ -23,13 +25,13 @@ temp_dir_base=$base_dir/temp
 #json filters for bamtools
 subnucl_filter=$pipe_dir/bamtools_filter/bamtools_subnucl.json
 nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
-
-#TODO: clean up modules
+#download and compile fseq from git & set max heap space in fseq exectuable
+fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
 # Load the required modules
-module load SAMtools/1.3-goolf-1.4.10
-module load BamTools/2.4.0-goolf-1.4.10
-module load BEDTools/v2.17.0-goolf-1.4.10
-module load Java/1.8.0_66
+ml SAMtools/1.3-goolf-1.4.10
+ml BamTools/2.4.0-goolf-1.4.10
+ml BEDTools/v2.17.0-goolf-1.4.10
+ml Java/1.8.0_66
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as line number
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $pbs_mapping_file` #read mapping file
@@ -61,7 +63,8 @@ aligner_dirs=()
 split_dirs=()
 bed_dirs=()
 peaks_dirs=()
-
+#some if statements that allow control over what is run and make sure the
+#right stuff is added to the appropriate arrays
 if [ $bowtie_1 -eq 1 ]; then
   bt_1_files=$sample_dir/bowtie
   bt_1_split=$bt_1_files/split_bam
