@@ -28,7 +28,7 @@ nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
 #download and compile fseq from git & set max heap space in fseq exectuable
 fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
 # Load the required modules
-ml SAMtools/1.3-goolf-1.4.10
+ml SAMtools/1.3.1-foss-2015b
 ml BamTools/2.4.0-goolf-1.4.10
 ml BEDTools/v2.17.0-goolf-1.4.10
 ml Java/1.8.0_66
@@ -102,7 +102,7 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
 
   echo "Running pipeline for aligner: ${aligner_dirs[$i]##/*/}"
 
-  f=($(ls ${aligner_dirs[$i]} | grep -e ".unique.bam$"))
+  f=($(ls ${aligner_dirs[$i]} | grep -e ".unique.bam$ "))
 
   if [[ "${#f[@]}" -ne "1" ]]; then
     error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
