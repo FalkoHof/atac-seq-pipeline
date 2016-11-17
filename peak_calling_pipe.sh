@@ -1,10 +1,10 @@
 #!/bin/bash
 #PBS -P rnaseq_nod
 #PBS -N atac-seq_peak-calling
-#PBS -J 1-6
+#PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/160526_atac-seq/160526_atac-seq_^array_index^_peak_calling.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/16116_atac-seq/peak-calling/16116_atac-seq_^array_index^_peak_calling.log
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=34gb
 
@@ -98,7 +98,7 @@ fi
 for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
 
   f=($(ls ${aligner_dirs[$i]} | grep -e ".sorted.bam"))
-  
+
   if [[ "${#f[@]}" -ne "1" ]]; then
     error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
   fi
