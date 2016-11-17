@@ -4,7 +4,7 @@
 #PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/16116_atac-seq/peak-calling/16116_atac-seq_^array_index^_peak_calling.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/161116_atac-seq/peak-calling/161116_atac-seq_^array_index^_peak_calling.log
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=34gb
 
@@ -75,10 +75,10 @@ if [ $bowtie_1 -eq 1 ]; then
   mkdir -p bt_1_peaks
   mkdir -p bt_1_bed
 
-  aligner_dirs+=(bt_1_files)
-  split_dirs+=(bt_1_split)
-  bed_dirs+=(bt_1_bed)
-  peaks_dirs+=(bt_1_peaks)
+  aligner_dirs+=($bt_1_files)
+  split_dirs+=($bt_1_split)
+  bed_dirs+=($bt_1_bed)
+  peaks_dirs+=($bt_1_peaks)
 fi
 
 if [ $bowtie_2 -eq 1 ]; then
@@ -91,10 +91,10 @@ if [ $bowtie_2 -eq 1 ]; then
   mkdir -p bt_2_peaks
   mkdir -p bt_2_bed
 
-  aligner_dirs+=(bt_2_files)
-  split_dirs+=(bt_2_split)
-  bed_dirs+=(bt_2_bed)
-  peaks_dirs+=(bt_2_peaks)
+  aligner_dirs+=($bt_2_files)
+  split_dirs+=($bt_2_split)
+  bed_dirs+=($bt_2_bed)
+  peaks_dirs+=($bt_2_peaks)
 fi
 # === end ENVIRONMENT SETUP ===
 ##### Starting the ATAC-seq peak calling pipeline #####
