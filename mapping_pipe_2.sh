@@ -22,11 +22,9 @@ temp_dir_base=$base_dir/temp
 #convert bam to fastq
 convert_bam=1
 #delete unecessary files
-clean=0
+clean=1
 #specfify if alignment should be run
 align=1
-#specify aligner
-#aligner=bowtie2
 #specify number of threads
 threads=16 #set this to the number of available cores
 
@@ -88,7 +86,6 @@ fi
 
 
 if [ $align -eq 1 ]; then
-  #if [ "$aligner" == "bowtie2" ]; then
 
     echo "Aligning with bowtie2..."
     mkdir -p $sample_dir/bowtie2
@@ -115,9 +112,12 @@ if [ $align -eq 1 ]; then
       M=$sample_dir/bowtie2/${f%.*}_bt2_dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
-  #fi
 
-  #if [ "$aligner" == "bowtie" ]; then
+    echo "Indexing bam files..."
+    #indes the bam file for downstream applications..
+    samtools index $sample_dir/bowtie2/${f%.*}.bam
+    samtools index $sample_dir/bowtie2/${f%.*}.unique.bam
+    echo "Indexing bam files... - Done"
 
     echo "Aligning with bowtie..."
     mkdir -p $sample_dir/bowtie
@@ -144,7 +144,12 @@ if [ $align -eq 1 ]; then
         M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
         AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
       echo "Removing duplicates... - Done"
-  #fi
+
+      echo "Indexing bam files..."
+      #indes the bam file for downstream applications..
+      samtools index $sample_dir/bowtie/${f%.*}.bam
+      samtools index $sample_dir/bowtie/${f%.*}.unique.bam
+      echo "Indexing bam files... - Done"
 fi
 
 if [ $clean  -eq 1 ]; then
