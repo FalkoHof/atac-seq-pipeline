@@ -102,7 +102,7 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
 
   echo "Running pipeline for aligner: ${aligner_dirs[$i]##/*/}"
 
-  f=($(ls ${aligner_dirs[$i]} | grep -e ".unique.bam"))
+  f=($(ls ${aligner_dirs[$i]} | grep -e ".unique.bam$"))
 
   if [[ "${#f[@]}" -ne "1" ]]; then
     error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
