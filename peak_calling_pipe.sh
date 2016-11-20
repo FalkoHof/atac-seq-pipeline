@@ -5,13 +5,17 @@
 #PBS -j oe
 #PBS -q workq
 #PBS -o /lustre/scratch/users/falko.hofmann/log/161116_atac-seq/peak-calling/161116_atac-seq_^array_index^_peak_calling.log
-#PBS -l walltime=24:00:00
-#PBS -l select=1:ncpus=8:mem=34gb
+#PBS -l walltime=9:00:00
+#PBS -l select=1:ncpus=8:mem=48gb
 
 # === begin ENVIRONMENT SETUP ===
 #some parameters on what to execute.
 bowtie_1=1
 bowtie_2=1
+# macs2=1
+# #TODO: set to the appropriate file
+# macs2_control=
+# effective_genome_size=1.2e8
 #set to the number of available cores
 threads=8
 #path from which the script is exectuted
@@ -133,11 +137,11 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   echo "Converting bam files to bed..."
   #convert to bed, keep reads from nuclear chromosomes, then sort and store them
   bedtools bamtobed -i ${aligner_dirs[$i]}/$f | grep "^Ath_chr[1-5]" |\
-    sort -k1,1V -k2,2n > ${bed_dirs[$i]}/${f%.*}.bed
+    sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.bed
   bedtools bamtobed -i ${split_dirs[$i]}/${f%.*}.subnucl.bam | \
-    grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n > ${bed_dirs[$i]}/${f%.*}.subnucl.bed
+    grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.subnucl.bed
   bedtools bamtobed -i ${split_dirs[$i]}/${f%.*}.nucl.bam | \
-    grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n > ${bed_dirs[$i]}/${f%.*}.nucl.bed
+    grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.nucl.bed
   echo "Converting bam files to bed... - Done"
   #make some output folders
   mkdir -p ${peaks_dirs[$i]}/combined
@@ -173,4 +177,43 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   #rm -vr ${fseq_subnucl[@]}
   #rm -vr ${fseq_nucl[@]}
 done
-#TODO: implement clean loop that removes or zips the bed files.
+#
+#
+# if [ $macs2 -eq 1 ]; then
+#   bt_2_files=$sample_dir/bowtie2
+#   bt_2_split=$bt_2_files_split/split_bam
+#   bt_2_bed=$bt_1_files/bed_files
+#   bt_2_peaks=$bt_2_files/peak_calling
+#
+#   macs2 callpeak \
+#       -t $treatment \
+#       -c $control \
+#       -f BAMPE \
+#       -g $effective_genome_size \
+#       -n $name \
+#       -B \
+#       -m 5 50 \
+#       --fix-bimodal \
+#       -q 0.05 \
+#       --call-summits \
+#
+#       effective_genome_size=1.2e8
+#
+#
+#   #TODO: load moduleß
+#
+#   mkdir -p $bt_2_split
+#   mkdir -p $bt_2_peaks
+#   mkdir -p $bt_2_bed
+#
+#   aligner_dirs+=($bt_2_files)
+#   split_dirs+=($bt_2_split)
+#   bed_dirs+=($bt_2_bed)
+#   peaks_dirs+=($bt_2_peaks)
+# fi
+#
+#
+#
+#
+#
+# #TODO: implement clean loop that removes or zips the bed files.
