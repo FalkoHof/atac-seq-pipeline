@@ -71,9 +71,9 @@ if [ $bowtie_1 -eq 1 ]; then
   bt_1_bed=$bt_1_files/bed_files
   bt_1_peaks=$bt_1_files/peak_calling
 
-  mkdir -p bt_1_split
-  mkdir -p bt_1_peaks
-  mkdir -p bt_1_bed
+  mkdir -p $bt_1_split
+  mkdir -p $bt_1_peaks
+  mkdir -p $bt_1_bed
 
   aligner_dirs+=($bt_1_files)
   split_dirs+=($bt_1_split)
@@ -87,9 +87,9 @@ if [ $bowtie_2 -eq 1 ]; then
   bt_2_bed=$bt_1_files/bed_files
   bt_2_peaks=$bt_2_files/peak_calling
 
-  mkdir -p bt_2_split
-  mkdir -p bt_2_peaks
-  mkdir -p bt_2_bed
+  mkdir -p $bt_2_split
+  mkdir -p $bt_2_peaks
+  mkdir -p $bt_2_bed
 
   aligner_dirs+=($bt_2_files)
   split_dirs+=($bt_2_split)
