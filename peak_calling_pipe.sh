@@ -88,7 +88,7 @@ fi
 if [ $bowtie_2 -eq 1 ]; then
   bt_2_files=$sample_dir/bowtie2
   bt_2_split=$bt_2_files_split/split_bam
-  bt_2_bed=$bt_1_files/bed_files
+  bt_2_bed=$bt_2_files/bed_files
   bt_2_peaks=$bt_2_files/peak_calling
 
   mkdir -p $bt_2_split
