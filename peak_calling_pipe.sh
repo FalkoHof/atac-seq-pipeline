@@ -164,12 +164,17 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   fseq_subnucl=($(ls ${peaks_dirs[$i]}/subnucl | grep -e "Ath_chr[1-5].npf"))
   fseq_nucl=($(ls ${peaks_dirs[$i]}/nucl | grep -e "Ath_chr[1-5].npf"))
   #concatenate them to one file and sort
+  cd ${peaks_dirs[$i]}/combined
   cat ${fseq_combined[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/combined/${f%.*}_fseq.np
+    ${peaks_dirs[$i]}/combined/${f%.*}_fseq.npf
+
+  cd ${peaks_dirs[$i]}/subnucl
   cat ${fseq_subnucl[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/subnucl/${f%.*}_fseq.np
+    ${peaks_dirs[$i]}/subnucl/${f%.*}_fseq.npf
+
+  cd ${peaks_dirs[$i]}/nuc
   cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/nucl/${f%.*}_fseq.np
+    ${peaks_dirs[$i]}/nucl/${f%.*}_fseq.npf
   echo "Merging f-seq files... - Done"
 
   #TODO: implement removal of the old per chromosome files.
