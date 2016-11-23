@@ -31,6 +31,9 @@ subnucl_filter=$pipe_dir/bamtools_filter/bamtools_subnucl.json
 nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
 #download and compile fseq from git & set max heap space in fseq exectuable
 fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
+igvtools=/lustre/scratch/users/$USER/software/IGVTools/igvtools
+
+
 # Load the required modules
 ml SAMtools/1.3.1-foss-2016a
 ml BamTools/2.4.0-foss-2016a
@@ -87,7 +90,7 @@ fi
 
 if [ $bowtie_2 -eq 1 ]; then
   bt_2_files=$sample_dir/bowtie2
-  bt_2_split=$bt_2_files_split/split_bam
+  bt_2_split=$bt_2_files/split_bam
   bt_2_bed=$bt_2_files/bed_files
   bt_2_peaks=$bt_2_files/peak_calling
 
