@@ -128,7 +128,7 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   #calculate some stats...
   reads_subnucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.subnucl.bam)
   reads_nucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.nucl.bam)
-  enrichment_subncl = $(($reads_subnucl / $reads_nucl))
+  enrichment_subncl=$(($reads_subnucl / $reads_nucl))
   #some string assignments
   read_stats="Subnucleosomal reads: $reads_subnucl\n"
   read_stats+="Nucleosomal reads: $reads_nucl\n"
