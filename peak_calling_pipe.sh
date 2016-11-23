@@ -177,7 +177,7 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
     ${peaks_dirs[$i]}/subnucl/${f%.*}_subnucl_fseq.npf
   rm -v ${fseq_subnucl[@]}
 
-  cd ${peaks_dirs[$i]}/nuc
+  cd ${peaks_dirs[$i]}/nucl
   cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
     ${peaks_dirs[$i]}/nucl/${f%.*}_nucl_fseq.npf
   rm -v ${fseq_nucl[@]}
