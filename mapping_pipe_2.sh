@@ -112,17 +112,22 @@ if [ $align -eq 1 ]; then
     echo "Aligning with bowtie2... - Done"
 
     echo "Converting to bam..."
-    samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}.sam | \
-      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
+    samtools sort -m 3G -@ $threads $sample_dir/bowtie2/${f%.*}.sam \
+      -o $sample_dir/bowtie2/${f%.*}.sorted.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
-    java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-      I=$sample_dir/bowtie2/${f%.*}.bam \
+    java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicatesWithMateCigar \
+      I=$sample_dir/bowtie2/${f%.*}.sorted.bam \
       O=$sample_dir/bowtie2/${f%.*}.unique.bam \
-      M=$sample_dir/bowtie2/${f%.*}_bt2_dup_metrics.txt \
+      M=$sample_dir/bowtie2/${f%.*}_bt_dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
+
+    echo "Quality filtering..."
+    samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}.unique.bam | \
+      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
+    echo "Quality filtering... - Done"
 
     echo "Indexing bam files..."
     #indes the bam file for downstream applications..
@@ -144,17 +149,22 @@ if [ $align -eq 1 ]; then
       echo "Aligning with bowtie... - Done"
 
       echo "Converting to bam..."
-      samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}.sam | \
-        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
+      samtools sort -m 3G -@ $threads $sample_dir/bowtie/${f%.*}.sam \
+        -o $sample_dir/bowtie/${f%.*}.sorted.bam
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
-      java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-        I=$sample_dir/bowtie/${f%.*}.bam \
+      java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicatesWithMateCigar \
+        I=$sample_dir/bowtie/${f%.*}.sorted.bam \
         O=$sample_dir/bowtie/${f%.*}.unique.bam \
         M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
         AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
       echo "Removing duplicates... - Done"
+
+      echo "Quality filtering..."
+      samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}.unique.bam | \
+        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
+      echo "Quality filtering... - Done"
 
       echo "Indexing bam files..."
       #indes the bam file for downstream applications..
@@ -165,7 +175,12 @@ fi
 
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
-  rm $sample_dir/$aligner/${f%.*}.sam
+  rm $sample_dir/bowtie/${f%.*}.sam
+  rm $sample_dir/bowtie2/${f%.*}.sam
+  rm $sample_dir/bowtie/${f%.*}.sorted.bam
+  rm $sample_dir/bowtie2/${f%.*}.sorted.bam
+  rm $sample_dir/bowtie/${f%.*}.unique.bam
+  rm $sample_dir/bowtie2/${f%.*}.unique.bam
   rm -r $temp_dir
   echo "Cleaning up... - Done"
 fi
