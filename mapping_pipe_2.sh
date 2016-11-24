@@ -60,8 +60,8 @@ ml picard/2.3.0
 
 #specify some variables for adaptor trimming...
 skewer=/lustre/scratch/users/falko.hofmann/software/skewer/skewer
-adaptor_1='CTGTCTCTTATACACATCTCCGAGCCCACGAGAC'
-adaptor_2='CTGTCTCTTATACACATCTGACGCTGCCGACGA'
+adaptor_1=CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+adaptor_2=CTGTCTCTTATACACATCTGACGCTGCCGACGA
 
 # get all bam files in folder
 f=($(ls $sample_dir | grep -e ".bam"))
@@ -88,11 +88,10 @@ if [ $convert_bam -eq 1 ]; then
 
   #run skewer
   $skewer \
-    -x $adaptor_1 \
-    -y $adaptor_2 \
-    $fastq_dir/${f%.*}.1.fq \
-    $fastq_dir/${f%.*}.2.fq \
-    -o ${f%.*}
+   -x $adaptor_1 \
+   -y $adaptor_2 \
+    $fastq_dir/${f%.*}.1.fq $fastq_dir/${f%.*}.2.fq \
+    -o $fastq_dir/${f%.*}
   echo "Converting bam to fastq... - Done"
 fi
 
