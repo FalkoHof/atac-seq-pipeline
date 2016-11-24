@@ -125,12 +125,12 @@ if [ $align -eq 1 ]; then
 
     echo "Quality filtering..."
     samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}.unique.bam | \
-      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
+      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.final.bam
     echo "Quality filtering... - Done"
 
     echo "Indexing bam files..."
     #indes the bam file for downstream applications..
-    samtools index $sample_dir/bowtie2/${f%.*}.bam
+    samtools index $sample_dir/bowtie2/${f%.*}.final.bam
     samtools index $sample_dir/bowtie2/${f%.*}.unique.bam
     echo "Indexing bam files... - Done"
 
@@ -162,12 +162,12 @@ if [ $align -eq 1 ]; then
 
       echo "Quality filtering..."
       samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}.unique.bam | \
-        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
+        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.final.bam
       echo "Quality filtering... - Done"
 
       echo "Indexing bam files..."
       #indes the bam file for downstream applications..
-      samtools index $sample_dir/bowtie/${f%.*}.bam
+      samtools index $sample_dir/bowtie/${f%.*}.final.bam
       samtools index $sample_dir/bowtie/${f%.*}.unique.bam
       echo "Indexing bam files... - Done"
 fi
