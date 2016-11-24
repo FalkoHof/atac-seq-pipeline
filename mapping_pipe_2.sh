@@ -4,7 +4,7 @@
 #PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/161116_atac-seq/161116_atac-seq_^array_index^_mapping.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/161124_atac-seq/161124_atac-seq_^array_index^_mapping.log
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=16:mem=64gb
 
@@ -53,11 +53,15 @@ function error_exit
   exit 1
 }
 
-
 #load some modules...
 ml SAMtools/1.3.1-foss-2015b
 ml BEDTools/2.26.0-foss-2015b
 ml picard/2.3.0
+
+#specify some variables for adaptor trimming...
+skewer=/lustre/scratch/users/falko.hofmann/software/skewer/skewer
+adaptor_1=CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+adaptor_2=CTGTCTCTTATACACATCTGACGCTGCCGACGA
 
 # get all bam files in folder
 f=($(ls $sample_dir | grep -e ".bam"))
@@ -81,9 +85,15 @@ if [ $convert_bam -eq 1 ]; then
   bedtools bamtofastq -i $fastq_dir/${f%.*}.sorted.bam  \
     -fq $fastq_dir/${f%.*}.1.fq  \
     -fq2 $fastq_dir/${f%.*}.2.fq
+
+  #run skewer
+  $skewer \
+   -x $adaptor_1 \
+   -y $adaptor_2 \
+    $fastq_dir/${f%.*}.1.fq $fastq_dir/${f%.*}.2.fq \
+    -o $fastq_dir/${f%.*}
   echo "Converting bam to fastq... - Done"
 fi
-
 
 if [ $align -eq 1 ]; then
 
@@ -94,24 +104,29 @@ if [ $align -eq 1 ]; then
       --very-sensitive \
       --maxins 2000 \
       -x $bt_2_index \
-      -1 $fastq_dir/${f%.*}.1.fq \
-      -2 $fastq_dir/${f%.*}.2.fq \
+      -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
+      -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
       -S $sample_dir/bowtie2/${f%.*}.sam \
       2> $sample_dir/bowtie2/${f%.*}_bt2_summary.txt
     echo "Aligning with bowtie2... - Done"
 
     echo "Converting to bam..."
-    samtools view -bhf 0x2 $sample_dir/bowtie2/${f%.*}.sam | \
-      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
+    samtools sort -m 3G -@ $threads $sample_dir/bowtie2/${f%.*}.sam \
+      -o $sample_dir/bowtie2/${f%.*}.sorted.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
     java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-      I=$sample_dir/bowtie2/${f%.*}.bam \
+      I=$sample_dir/bowtie2/${f%.*}.sorted.bam \
       O=$sample_dir/bowtie2/${f%.*}.unique.bam \
-      M=$sample_dir/bowtie2/${f%.*}_bt2_dup_metrics.txt \
+      M=$sample_dir/bowtie2/${f%.*}_bt_dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
+
+    echo "Quality filtering..."
+    samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}.unique.bam | \
+      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
+    echo "Quality filtering... - Done"
 
     echo "Indexing bam files..."
     #indes the bam file for downstream applications..
@@ -126,24 +141,29 @@ if [ $align -eq 1 ]; then
       -X 2000 \
       -m 1 \
       -S $bt_1_index \
-      -1 $fastq_dir/${f%.*}.1.fq \
-      -2 $fastq_dir/${f%.*}.2.fq \
+      -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
+      -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
       $sample_dir/bowtie/${f%.*}.sam \
       2> $sample_dir/bowtie/${f%.*}_bt_summary.txt
       echo "Aligning with bowtie... - Done"
 
       echo "Converting to bam..."
-      samtools view -bhf 0x2 $sample_dir/bowtie/${f%.*}.sam | \
-        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
+      samtools sort -m 3G -@ $threads $sample_dir/bowtie/${f%.*}.sam \
+        -o $sample_dir/bowtie/${f%.*}.sorted.bam
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
       java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-        I=$sample_dir/bowtie/${f%.*}.bam \
+        I=$sample_dir/bowtie/${f%.*}.sorted.bam \
         O=$sample_dir/bowtie/${f%.*}.unique.bam \
         M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
         AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
       echo "Removing duplicates... - Done"
+
+      echo "Quality filtering..."
+      samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}.unique.bam | \
+        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
+      echo "Quality filtering... - Done"
 
       echo "Indexing bam files..."
       #indes the bam file for downstream applications..
@@ -154,7 +174,12 @@ fi
 
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
-  rm $sample_dir/$aligner/${f%.*}.sam
+  rm $sample_dir/bowtie/${f%.*}.sam
+  rm $sample_dir/bowtie2/${f%.*}.sam
+  rm $sample_dir/bowtie/${f%.*}.sorted.bam
+  rm $sample_dir/bowtie2/${f%.*}.sorted.bam
+  rm $sample_dir/bowtie/${f%.*}.unique.bam
+  rm $sample_dir/bowtie2/${f%.*}.unique.bam
   rm -r $temp_dir
   echo "Cleaning up... - Done"
 fi

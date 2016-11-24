@@ -31,11 +31,8 @@ subnucl_filter=$pipe_dir/bamtools_filter/bamtools_subnucl.json
 nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
 #download and compile fseq from git & set max heap space in fseq exectuable
 fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
-# Load the required modules
-ml SAMtools/1.3.1-foss-2016a
-ml BamTools/2.4.0-foss-2016a
-ml BEDTools/2.26.0-foss-2016a
-ml Java/1.8.0_66
+#igvtools=/lustre/scratch/users/$USER/software/IGVTools/igvtools
+tair10_size=119146348
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as line number
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $pbs_mapping_file` #read mapping file
@@ -104,9 +101,15 @@ fi
 ##### Starting the ATAC-seq peak calling pipeline #####
 for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
 
+  # Load the required modules each loop due to deeptools loading differnt libs
+  ml SAMtools/1.3.1-foss-2016a
+  ml BamTools/2.4.0-foss-2016a
+  ml BEDTools/2.26.0-foss-2016a
+  ml Java/1.8.0_66
+
   echo "Running pipeline for aligner: ${aligner_dirs[$i]##/*/}"
 
-  f=($(ls ${aligner_dirs[$i]} | grep -e ".unique.bam$"))
+  f=($(ls ${aligner_dirs[$i]} | grep -e ".bam$"))
 
   if [[ "${#f[@]}" -ne "1" ]]; then
     error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
@@ -125,7 +128,7 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   #calculate some stats...
   reads_subnucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.subnucl.bam)
   reads_nucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.nucl.bam)
-  enrichment_subncl = $(($reads_subnucl / $reads_nucl))
+  enrichment_subncl=$(($reads_subnucl / $reads_nucl))
   #some string assignments
   read_stats="Subnucleosomal reads: $reads_subnucl\n"
   read_stats+="Nucleosomal reads: $reads_nucl\n"
@@ -150,11 +153,11 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
 
   echo "Peak-calling with f-seq..."
   #run fseq on the different files...
-  sh $fseq -v -f 0 -of npf -t 1.0 -o ${peaks_dirs[$i]}/combined \
+  sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/combined \
     ${bed_dirs[$i]}/${f%.*}.bed
-  sh $fseq -v -f 0 -of npf -t 1.0 -o ${peaks_dirs[$i]}/subnucl \
+  sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/subnucl \
     ${bed_dirs[$i]}/${f%.*}.subnucl.bed
-  sh $fseq -v -f 0 -of npf -t 1.0 -o ${peaks_dirs[$i]}/nucl \
+  sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/nucl \
     ${bed_dirs[$i]}/${f%.*}.nucl.bed
   echo "Peak-calling with f-seq... - Done"
 
@@ -164,13 +167,50 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   fseq_subnucl=($(ls ${peaks_dirs[$i]}/subnucl | grep -e "Ath_chr[1-5].npf"))
   fseq_nucl=($(ls ${peaks_dirs[$i]}/nucl | grep -e "Ath_chr[1-5].npf"))
   #concatenate them to one file and sort
+  cd ${peaks_dirs[$i]}/combined
   cat ${fseq_combined[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/combined/${f%.*}_fseq.np
+    ${peaks_dirs[$i]}/combined/${f%.*}_combined_fseq.npf
+    #${peaks_dirs[$i]}/combined/${f%.*}_fseq_combined.npf
+
+  rm -v ${fseq_combined[@]}
+
+  cd ${peaks_dirs[$i]}/subnucl
   cat ${fseq_subnucl[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/subnucl/${f%.*}_fseq.np
+    ${peaks_dirs[$i]}/subnucl/${f%.*}_subnucl_fseq.npf
+  rm -v ${fseq_subnucl[@]}
+
+  cd ${peaks_dirs[$i]}/nucl
   cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/nucl/${f%.*}_fseq.np
+    ${peaks_dirs[$i]}/nucl/${f%.*}_nucl_fseq.npf
+  rm -v ${fseq_nucl[@]}
   echo "Merging f-seq files... - Done"
+
+  echo "Creating normalized bigwig files..."
+  #load module
+  ml deepTools/2.2.4-foss-2015a-Python-2.7.9
+
+  bamCoverage \
+    --binSize=1 \
+    --normalizeTo1x $tair10_size \
+    --ignoreDuplicates
+    -b ${aligner_dirs[$i]}/$f  \
+    -o ${bw_dirs[$i]}/${f%.*}.bw \
+
+  bamCoverage \
+    --binSize=1 \
+    --normalizeTo1x $tair10_size \
+    --ignoreDuplicates
+    -b ${split_dirs[$i]}/${f%.*}.subnucl.bam  \
+    -o ${bw_dirs[$i]}/${f%.*}.subnucl.bw \
+
+  bamCoverage \
+    --binSize=1 \
+    --normalizeTo1x $tair10_size \
+    --ignoreDuplicates
+    -b ${split_dirs[$i]}/${f%.*}.nucl.bam  \
+    -o ${bw_dirs[$i]}/${f%.*}.nucl.bw \
+
+  echo "Creating normalized bigwig files... - Done"
 
   #TODO: implement removal of the old per chromosome files.
   #rm -vr ${fseq_combined[@]}
