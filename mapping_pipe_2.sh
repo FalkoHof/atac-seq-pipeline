@@ -116,7 +116,7 @@ if [ $align -eq 1 ]; then
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
-    java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicatesWithMateCigar \
+    java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
       I=$sample_dir/bowtie2/${f%.*}.sorted.bam \
       O=$sample_dir/bowtie2/${f%.*}.unique.bam \
       M=$sample_dir/bowtie2/${f%.*}_bt_dup_metrics.txt \
@@ -153,7 +153,7 @@ if [ $align -eq 1 ]; then
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
-      java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicatesWithMateCigar \
+      java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
         I=$sample_dir/bowtie/${f%.*}.sorted.bam \
         O=$sample_dir/bowtie/${f%.*}.unique.bam \
         M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
