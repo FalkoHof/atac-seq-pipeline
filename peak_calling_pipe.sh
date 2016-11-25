@@ -135,15 +135,15 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
     samtools sort -m 3G -@ $threads - -o ${split_dirs[$i]}/${f%.*}.nucl.bam
   samtools index ${split_dirs[$i]}/${f%.*}.nucl.bam
   #calculate some stats...
-  reads_subnucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.subnucl.bam)
-  reads_nucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.nucl.bam)
-  enrichment_subncl=$(($reads_subnucl / $reads_nucl))
+  #reads_subnucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.subnucl.bam)
+  #reads_nucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.nucl.bam)
+  #enrichment_subncl=$(($reads_subnucl / $reads_nucl))
   #some string assignments
-  read_stats="Subnucleosomal reads: $reads_subnucl\n"
-  read_stats+="Nucleosomal reads: $reads_nucl\n"
-  read_stats+="Ratio: $enrichment_subncl"
+  #read_stats="Subnucleosomal reads: $reads_subnucl\n"
+  #read_stats+="Nucleosomal reads: $reads_nucl\n"
+  #read_stats+="Ratio: $enrichment_subncl"
   #print and save them
-  printf $read_stats | tee ${split_dirs[$i]}/ratios.txt
+  #printf $read_stats | tee ${split_dirs[$i]}/ratios.txt
   echo "Splitting bam files... - Done"
 
   echo "Converting bam files to bed..."
