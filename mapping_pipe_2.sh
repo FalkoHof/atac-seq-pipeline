@@ -139,7 +139,7 @@ if [ $align -eq 1 ]; then
     echo "Indexing bam files..."
     #indes the bam file for downstream applications..
     samtools index $sample_dir/alignments/${f%.*}.bam
-    #samtools index $sample_dir/alignments/${f%.*}.no_dups.bam
+    samtools index $sample_dir/alignments/${f%.*}.unique.bam
     echo "Indexing bam files... - Done"
 fi
 
