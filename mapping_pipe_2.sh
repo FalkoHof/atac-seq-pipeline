@@ -106,7 +106,6 @@ if [ $align -eq 1 ]; then
     echo "Aligning with bowtie2..."
     mkdir -p $sample_dir/alignments
 
-
     bowtie2 --threads $threads \
       --very-sensitive \
       --maxins 2000 \
@@ -150,7 +149,7 @@ if [ $clean  -eq 1 ]; then
   rm -v $sample_dir/alignments/${f%.*}.sam
   rm -v $sample_dir/alignments/${f%.*}.sorted.bam
   rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
-  #rm -rv $sample_dir/fastq
+  rm -rv $sample_dir/fastq
   rm -r $temp_dir
   echo "Cleaning up... - Done"
 fi
