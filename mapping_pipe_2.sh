@@ -106,31 +106,31 @@ if [ $align -eq 1 ]; then
       -x $bt_2_index \
       -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
       -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
-      -S $sample_dir/bowtie2/${f%.*}.sam \
-      2> $sample_dir/bowtie2/${f%.*}_bt2_summary.txt
+      -S $sample_dir/bowtie2/${f%.*}_bt2.sam \
+      2> $sample_dir/bowtie2/${f%.*}_bt2summary.txt
     echo "Aligning with bowtie2... - Done"
 
     echo "Converting to bam..."
-    samtools sort -m 3G -@ $threads $sample_dir/bowtie2/${f%.*}.sam \
-      -o $sample_dir/bowtie2/${f%.*}.sorted.bam
+    samtools sort -m 3G -@ $threads $sample_dir/bowtie2/${f%.*}_bt2.sam \
+      -o $sample_dir/bowtie2/${f%.*}_bt2.sorted.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
     java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-      I=$sample_dir/bowtie2/${f%.*}.sorted.bam \
-      O=$sample_dir/bowtie2/${f%.*}.unique.bam \
-      M=$sample_dir/bowtie2/${f%.*}_bt_dup_metrics.txt \
+      I=$sample_dir/bowtie2/${f%.*}_bt2.sorted.bam \
+      O=$sample_dir/bowtie2/${f%.*}_bt2.unique.bam \
+      M=$sample_dir/bowtie2/${f%.*}_bt2dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
 
     echo "Quality filtering..."
-    samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}.unique.bam | \
-      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}.bam
+    samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}_bt2.unique.bam | \
+      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}_bt2.bam
     echo "Quality filtering... - Done"
 
     echo "Indexing bam files..."
     #indes the bam file for downstream applications..
-    samtools index $sample_dir/bowtie2/${f%.*}.bam
+    samtools index $sample_dir/bowtie2/${f%.*}_bt2.bam
     #samtools index $sample_dir/bowtie2/${f%.*}.unique.bam
     echo "Indexing bam files... - Done"
 
@@ -143,43 +143,43 @@ if [ $align -eq 1 ]; then
       -S $bt_1_index \
       -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
       -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
-      $sample_dir/bowtie/${f%.*}.sam \
+      $sample_dir/bowtie/${f%.*}_bt.sam \
       2> $sample_dir/bowtie/${f%.*}_bt_summary.txt
       echo "Aligning with bowtie... - Done"
 
       echo "Converting to bam..."
-      samtools sort -m 3G -@ $threads $sample_dir/bowtie/${f%.*}.sam \
-        -o $sample_dir/bowtie/${f%.*}.sorted.bam
+      samtools sort -m 3G -@ $threads $sample_dir/bowtie/${f%.*}_bt.sam \
+        -o $sample_dir/bowtie/${f%.*}_bt.sorted.bam
       echo "Converting to bam... - Done"
 
       echo "Removing duplicates..."
       java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-        I=$sample_dir/bowtie/${f%.*}.sorted.bam \
-        O=$sample_dir/bowtie/${f%.*}.unique.bam \
+        I=$sample_dir/bowtie/${f%.*}_bt.sorted.bam \
+        O=$sample_dir/bowtie/${f%.*}_bt.unique.bam \
         M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
         AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
       echo "Removing duplicates... - Done"
 
       echo "Quality filtering..."
-      samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}.unique.bam | \
+      samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}_bt.unique.bam | \
         samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
       echo "Quality filtering... - Done"
 
       echo "Indexing bam files..."
       #indes the bam file for downstream applications..
-      samtools index $sample_dir/bowtie/${f%.*}.bam
+      samtools index $sample_dir/bowtie/${f%.*}_bt.bam
       #samtools index $sample_dir/bowtie/${f%.*}.unique.bam
       echo "Indexing bam files... - Done"
 fi
 
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
-  rm $sample_dir/bowtie/${f%.*}.sam
-  rm $sample_dir/bowtie2/${f%.*}.sam
-  rm $sample_dir/bowtie/${f%.*}.sorted.bam
-  rm $sample_dir/bowtie2/${f%.*}.sorted.bam
-  rm $sample_dir/bowtie/${f%.*}.unique.bam
-  rm $sample_dir/bowtie2/${f%.*}.unique.bam
+  rm $sample_dir/bowtie/${f%.*}_bt.sam
+  rm $sample_dir/bowtie2/${f%.*}_bt2.sam
+  rm $sample_dir/bowtie/${f%.*}_bt.sorted.bam
+  rm $sample_dir/bowtie2/${f%.*}_bt2.sorted.bam
+  rm $sample_dir/bowtie/${f%.*}_bt.unique.bam
+  rm $sample_dir/bowtie2/${f%.*}_bt2.unique.bam
   rm -r $temp_dir
   echo "Cleaning up... - Done"
 fi
