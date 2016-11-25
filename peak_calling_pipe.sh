@@ -199,21 +199,21 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   bamCoverage \
     --binSize=1 \
     --normalizeTo1x $tair10_size \
-    --ignoreDuplicates
-    -b ${aligner_dirs[$i]}/$f  \
+    --ignoreDuplicates \
+    -b ${aligner_dirs[$i]}/$f \
     -o ${bw_dirs[$i]}/${f%.*}.bw \
 
   bamCoverage \
     --binSize=1 \
     --normalizeTo1x $tair10_size \
-    --ignoreDuplicates
+    --ignoreDuplicates \
     -b ${split_dirs[$i]}/${f%.*}.subnucl.bam  \
     -o ${bw_dirs[$i]}/${f%.*}.subnucl.bw \
 
   bamCoverage \
     --binSize=1 \
     --normalizeTo1x $tair10_size \
-    --ignoreDuplicates
+    --ignoreDuplicates \
     -b ${split_dirs[$i]}/${f%.*}.nucl.bam  \
     -o ${bw_dirs[$i]}/${f%.*}.nucl.bw \
 
