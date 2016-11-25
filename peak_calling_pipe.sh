@@ -64,6 +64,7 @@ aligner_dirs=()
 split_dirs=()
 bed_dirs=()
 peaks_dirs=()
+bw_dirs=()
 #some if statements that allow control over what is run and make sure the
 #right stuff is added to the appropriate arrays
 if [ $bowtie_1 -eq 1 ]; then
@@ -71,15 +72,18 @@ if [ $bowtie_1 -eq 1 ]; then
   bt_1_split=$bt_1_files/split_bam
   bt_1_bed=$bt_1_files/bed_files
   bt_1_peaks=$bt_1_files/peak_calling
+  bt_1_wg=$bt_1_files/wig_files
 
   mkdir -p $bt_1_split
   mkdir -p $bt_1_peaks
   mkdir -p $bt_1_bed
+  mkdir -p $bt_1_wg
 
   aligner_dirs+=($bt_1_files)
   split_dirs+=($bt_1_split)
   bed_dirs+=($bt_1_bed)
   peaks_dirs+=($bt_1_peaks)
+  bw_dirs+=($bt_1_wg)
 fi
 
 if [ $bowtie_2 -eq 1 ]; then
@@ -87,15 +91,18 @@ if [ $bowtie_2 -eq 1 ]; then
   bt_2_split=$bt_2_files/split_bam
   bt_2_bed=$bt_2_files/bed_files
   bt_2_peaks=$bt_2_files/peak_calling
+  bt_2_wg=$bt_2_files/wig_files
 
   mkdir -p $bt_2_split
   mkdir -p $bt_2_peaks
   mkdir -p $bt_2_bed
+  mkdir -p $bt_2_wg
 
   aligner_dirs+=($bt_2_files)
   split_dirs+=($bt_2_split)
   bed_dirs+=($bt_2_bed)
   peaks_dirs+=($bt_2_peaks)
+  bw_dirs+=($bt_2_wg)
 fi
 # === end ENVIRONMENT SETUP ===
 ##### Starting the ATAC-seq peak calling pipeline #####
