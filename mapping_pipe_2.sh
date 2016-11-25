@@ -12,8 +12,7 @@ pipe_dir=/lustre/scratch/users/$USER/pipelines/atac-seq-pipeline
 #set ouput base dir
 base_dir=/lustre/scratch/users/$USER/atac-seq
 #folder for bowtie indices
-#bt_1_index=/lustre/scratch/users/$USER/indices/bowtie/Col-0
-bt_2_index=/lustre/scratch/users/$USER/indices/alignments/Col-0
+bt_2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col-0
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
