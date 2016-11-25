@@ -233,7 +233,7 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   #rm -vr ${fseq_nucl[@]}
 done
 
-if [ $clean  -eq 1 ]; then
+if [ $clean -eq 1 ]; then
   echo "Cleaning up..."
   for dir in "${bed_dirs[@]}"
   do
