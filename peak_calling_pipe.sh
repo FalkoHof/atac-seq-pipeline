@@ -65,6 +65,8 @@ split_dirs=()
 bed_dirs=()
 peaks_dirs=()
 bw_dirs=()
+#set other temp dir location
+TMPDIR=$temp_dir_base
 #some if statements that allow control over what is run and make sure the
 #right stuff is added to the appropriate arrays
 if [ $bowtie_1 -eq 1 ]; then
@@ -195,28 +197,34 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   echo "Creating normalized bigwig files..."
   #load module
   ml deepTools/2.2.4-foss-2015a-Python-2.7.9
+  ml OpenSSL/1.0.1p-foss-2015a
 
   bamCoverage \
-    --binSize=1 \
-    --normalizeTo1x $tair10_size \
-    --ignoreDuplicates \
     -b ${aligner_dirs[$i]}/$f \
     -o ${bw_dirs[$i]}/${f%.*}.bw \
-
-  bamCoverage \
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
+    --numberOfProcessors=$threads \
+    --ignoreForNormalization Ath_chrm Ath_chrc
+
+  bamCoverage \
     -b ${split_dirs[$i]}/${f%.*}.subnucl.bam  \
     -o ${bw_dirs[$i]}/${f%.*}.subnucl.bw \
-
-  bamCoverage \
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
+    --numberOfProcessors=$threads \
+    --ignoreForNormalization Ath_chrm Ath_chrc
+
+  bamCoverage \
     -b ${split_dirs[$i]}/${f%.*}.nucl.bam  \
     -o ${bw_dirs[$i]}/${f%.*}.nucl.bw \
-
+    --binSize=1 \
+    --normalizeTo1x $tair10_size \
+    --ignoreDuplicates \
+    --numberOfProcessors=$threads \
+    --ignoreForNormalization Ath_chrm Ath_chrc
   echo "Creating normalized bigwig files... - Done"
 
   #TODO: implement removal of the old per chromosome files.
@@ -224,6 +232,18 @@ for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
   #rm -vr ${fseq_subnucl[@]}
   #rm -vr ${fseq_nucl[@]}
 done
+
+if [ $clean  -eq 1 ]; then
+  echo "Cleaning up..."
+  for dir in "${bed_dirs[@]}"
+  do
+    rm -rv $dir
+  done
+  echo "Cleaning up... - Done"
+fi
+
+
+
 #
 #
 # if [ $macs2 -eq 1 ]; then
