@@ -4,8 +4,8 @@
 #PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/161116_atac-seq/peak-calling/161116_atac-seq_^array_index^_peak_calling.log
-#PBS -l walltime=9:00:00
+#PBS -o /lustre/scratch/users/falko.hofmann/log/161124_atac-seq/peak-calling/161124_atac-seq_^array_index^_peak_calling.log
+#PBS -l walltime=12:00:00
 #PBS -l select=1:ncpus=8:mem=48gb
 
 # === begin ENVIRONMENT SETUP ===
