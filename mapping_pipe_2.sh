@@ -12,8 +12,8 @@ pipe_dir=/lustre/scratch/users/$USER/pipelines/atac-seq-pipeline
 #set ouput base dir
 base_dir=/lustre/scratch/users/$USER/atac-seq
 #folder for bowtie indices
-bt_1_index=/lustre/scratch/users/$USER/indices/bowtie/Col-0
-bt_2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col-0
+#bt_1_index=/lustre/scratch/users/$USER/indices/bowtie/Col-0
+bt_2_index=/lustre/scratch/users/$USER/indices/alignments/Col-0
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
@@ -57,6 +57,7 @@ function error_exit
 ml SAMtools/1.3.1-foss-2015b
 ml BEDTools/2.26.0-foss-2015b
 ml picard/2.3.0
+ml Bowtie2/2.2.7-foss-2015b
 
 #specify some variables for adaptor trimming...
 skewer=/lustre/scratch/users/falko.hofmann/software/skewer/skewer
@@ -71,8 +72,8 @@ if [[ "${#f[@]}" -ne "1" ]]; then
 fi
 
 fastq_dir=$sample_dir/fastq
-
 mkdir -p $fastq_dir
+mkdir -p $sample_dir/logs
 
 if [ $convert_bam -eq 1 ]; then
   echo "Converting bam to fastq..."
@@ -85,101 +86,71 @@ if [ $convert_bam -eq 1 ]; then
   bedtools bamtofastq -i $fastq_dir/${f%.*}.sorted.bam  \
     -fq $fastq_dir/${f%.*}.1.fq  \
     -fq2 $fastq_dir/${f%.*}.2.fq
+  echo "Converting bam to fastq... - Done"
 
+  echo "Trimming adaptors with skewer..."
   #run skewer
   $skewer \
-   -x $adaptor_1 \
-   -y $adaptor_2 \
+    -x $adaptor_1 \
+    -y $adaptor_2 \
     $fastq_dir/${f%.*}.1.fq $fastq_dir/${f%.*}.2.fq \
-    -o $fastq_dir/${f%.*}
-  echo "Converting bam to fastq... - Done"
+    -o $fastq_dir/${f%.*} \
+    --quiet
+
+  mv -v $fastq_dir/*.log $sample_dir/logs
+  echo "Trimming adaptors with skewer... - Done"
 fi
 
 if [ $align -eq 1 ]; then
 
     echo "Aligning with bowtie2..."
-    mkdir -p $sample_dir/bowtie2
-    ml Bowtie2/2.2.7-foss-2015b
+    mkdir -p $sample_dir/alignments
+
+
     bowtie2 --threads $threads \
       --very-sensitive \
       --maxins 2000 \
       -x $bt_2_index \
       -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
       -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
-      -S $sample_dir/bowtie2/${f%.*}_bt2.sam \
-      2> $sample_dir/bowtie2/${f%.*}_bt2summary.txt
+      -S $sample_dir/alignments/${f%.*}.sam \
+      2> $sample_dir/logs/${f%.*}summary.txt
     echo "Aligning with bowtie2... - Done"
 
     echo "Converting to bam..."
-    samtools sort -m 3G -@ $threads $sample_dir/bowtie2/${f%.*}_bt2.sam \
-      -o $sample_dir/bowtie2/${f%.*}_bt2.sorted.bam
+    samtools sort -m 3G -@ $threads $sample_dir/alignments/${f%.*}.sam \
+      -o $sample_dir/alignments/${f%.*}.sorted.bam
     echo "Converting to bam... - Done"
 
     echo "Removing duplicates..."
     java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-      I=$sample_dir/bowtie2/${f%.*}_bt2.sorted.bam \
-      O=$sample_dir/bowtie2/${f%.*}_bt2.unique.bam \
-      M=$sample_dir/bowtie2/${f%.*}_bt2dup_metrics.txt \
+      I=$sample_dir/alignments/${f%.*}.sorted.bam \
+      O=$sample_dir/alignments/${f%.*}.no_dups.bam \
+      M=$sample_dir/logs/${f%.*}dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "Removing duplicates... - Done"
 
     echo "Quality filtering..."
-    samtools view -bhf 0x2 -q 30 $sample_dir/bowtie2/${f%.*}_bt2.unique.bam | \
-      samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie2/${f%.*}_bt2.bam
+    samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam | \
+      samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.bam
+
+    samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam | \
+      samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.unique.bam
     echo "Quality filtering... - Done"
 
     echo "Indexing bam files..."
     #indes the bam file for downstream applications..
-    samtools index $sample_dir/bowtie2/${f%.*}_bt2.bam
-    #samtools index $sample_dir/bowtie2/${f%.*}.unique.bam
+    samtools index $sample_dir/alignments/${f%.*}.bam
+    #samtools index $sample_dir/alignments/${f%.*}.no_dups.bam
     echo "Indexing bam files... - Done"
-
-    echo "Aligning with bowtie..."
-    mkdir -p $sample_dir/bowtie
-    ml Bowtie/1.1.2-foss-2015b
-    bowtie  --threads $threads \
-      -X 2000 \
-      -m 1 \
-      -S $bt_1_index \
-      -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
-      -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
-      $sample_dir/bowtie/${f%.*}_bt.sam \
-      2> $sample_dir/bowtie/${f%.*}_bt_summary.txt
-      echo "Aligning with bowtie... - Done"
-
-      echo "Converting to bam..."
-      samtools sort -m 3G -@ $threads $sample_dir/bowtie/${f%.*}_bt.sam \
-        -o $sample_dir/bowtie/${f%.*}_bt.sorted.bam
-      echo "Converting to bam... - Done"
-
-      echo "Removing duplicates..."
-      java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
-        I=$sample_dir/bowtie/${f%.*}_bt.sorted.bam \
-        O=$sample_dir/bowtie/${f%.*}_bt.unique.bam \
-        M=$sample_dir/bowtie/${f%.*}_bt_dup_metrics.txt \
-        AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
-      echo "Removing duplicates... - Done"
-
-      echo "Quality filtering..."
-      samtools view -bhf 0x2 -q 30 $sample_dir/bowtie/${f%.*}_bt.unique.bam | \
-        samtools sort -m 3G -@ $threads - -o $sample_dir/bowtie/${f%.*}.bam
-      echo "Quality filtering... - Done"
-
-      echo "Indexing bam files..."
-      #indes the bam file for downstream applications..
-      samtools index $sample_dir/bowtie/${f%.*}_bt.bam
-      #samtools index $sample_dir/bowtie/${f%.*}.unique.bam
-      echo "Indexing bam files... - Done"
 fi
 
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
-  rm $sample_dir/bowtie/${f%.*}_bt.sam
-  rm $sample_dir/bowtie2/${f%.*}_bt2.sam
-  rm $sample_dir/bowtie/${f%.*}_bt.sorted.bam
-  rm $sample_dir/bowtie2/${f%.*}_bt2.sorted.bam
-  rm $sample_dir/bowtie/${f%.*}_bt.unique.bam
-  rm $sample_dir/bowtie2/${f%.*}_bt2.unique.bam
+  rm -v $sample_dir/alignments/${f%.*}.sam
+  rm -v $sample_dir/alignments/${f%.*}.sorted.bam
+  rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
+  #rm -rv $sample_dir/fastq
   rm -r $temp_dir
   echo "Cleaning up... - Done"
 fi
