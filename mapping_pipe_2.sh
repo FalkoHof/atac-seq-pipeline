@@ -5,7 +5,7 @@
 #PBS -j oe
 #PBS -q workq
 #PBS -o /lustre/scratch/users/falko.hofmann/log/161124_atac-seq/161124_atac-seq_^array_index^_mapping.log
-#PBS -l walltime=24:00:00
+#PBS -l walltime=12:00:00
 #PBS -l select=1:ncpus=16:mem=64gb
 
 pipe_dir=/lustre/scratch/users/$USER/pipelines/atac-seq-pipeline
@@ -112,7 +112,7 @@ if [ $align -eq 1 ]; then
       -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
       -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
       -S $sample_dir/alignments/${f%.*}.sam \
-      2> $sample_dir/logs/${f%.*}summary.txt
+      2> $sample_dir/logs/${f%.*}_summary.txt
     echo "Aligning with bowtie2... - Done"
 
     echo "Converting to bam..."
