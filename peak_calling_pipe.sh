@@ -45,7 +45,7 @@ names_mapped=($input_mapper)
 sample_dir=${names_mapped[1]} # get the sample dir
 sample_name=`basename $sample_dir` #get the base name of the dir as sample name
 
-temp_dir=$temp_dir_base/sample_name
+temp_dir=$temp_dir_base/$sample_name
 
 mkdir -p $temp_dir
 
@@ -131,24 +131,23 @@ echo "Peak-calling with f-seq... - Done"
 
 echo "Merging f-seq files..."
 #put the fseq output file names in some arrays
-fseq_combined=($(ls ${peaks_dirs[$i]}/combined | grep -e "Ath_chr[1-5].npf"))
-fseq_subnucl=($(ls ${peaks_dirs[$i]}/subnucl | grep -e "Ath_chr[1-5].npf"))
-fseq_nucl=($(ls ${peaks_dirs[$i]}/nucl | grep -e "Ath_chr[1-5].npf"))
+fseq_combined=($(ls $fseq_files/combined | grep -e "Ath_chr[1-5].npf"))
+fseq_subnucl=($(ls $fseq_files/subnucl | grep -e "Ath_chr[1-5].npf"))
+fseq_nucl=($(ls $fseq_files/nucl | grep -e "Ath_chr[1-5].npf"))
 #concatenate them to one file and sort
-cd ${peaks_dirs[$i]}/combined
+cd $fseq_files/combined
 cat ${fseq_combined[@]} | sort -k 1,1 -k2,2n > \
-  ${peaks_dirs[$i]}/combined/${f%.*}_combined_fseq.npf
-
+  $fseq_files/combined/${f%.*}_combined_fseq.npf
 rm -v ${fseq_combined[@]}
 
-cd ${peaks_dirs[$i]}/subnucl
+cd $fseq_files/subnucl
 cat ${fseq_subnucl[@]} | sort -k 1,1 -k2,2n > \
-  ${peaks_dirs[$i]}/subnucl/${f%.*}_subnucl_fseq.npf
+  $fseq_files/subnucl/${f%.*}_subnucl_fseq.npf
 rm -v ${fseq_subnucl[@]}
 
-cd ${peaks_dirs[$i]}/nucl
+cd $fseq_files/nucl
 cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
-  ${peaks_dirs[$i]}/nucl/${f%.*}_nucl_fseq.npf
+  $fseq_files/nucl/${f%.*}_nucl_fseq.npf
 rm -v ${fseq_nucl[@]}
 echo "Merging f-seq files... - Done"
 
@@ -188,6 +187,10 @@ echo "Creating normalized bigwig files... - Done"
 
 echo "Peak-calling with MACS2"
 ml MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
+
+mkdir -p $macs2_files/combined
+mkdir -p $macs2_files/subnucl
+mkdir -p $macs2_files/nucl
 
 macs2 callpeak \
   -t $bam_files/$f \
