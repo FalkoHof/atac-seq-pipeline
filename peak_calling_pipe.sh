@@ -10,9 +10,14 @@
 
 # === begin ENVIRONMENT SETUP ===
 #some parameters on what to execute.
-bowtie_1=1
-bowtie_2=1
-# macs2=1
+#TODO:
+split_files=1
+create_bed=1
+run_fseq=1
+run_macs2=1
+create_wig=1
+clean=1
+
 # #TODO: set to the appropriate file
 # macs2_control=
 # effective_genome_size=1.2e8
@@ -52,6 +57,13 @@ echo 'Mapping file: ' $pbs_mapping_file
 #IDEA: maybe add some diagnostic output the chosen modes.
 echo '#########################################################################'
 
+# Load the required modules each loop due to deeptools loading differnt libs
+ml SAMtools/1.3.1-foss-2016a
+ml BamTools/2.4.0-foss-2016a
+ml BEDTools/2.26.0-foss-2016a
+ml Java/1.8.0_66
+
+
 #some error handling function
 function error_exit
 {
@@ -59,190 +71,354 @@ function error_exit
   exit 1
 }
 
-#TODO and conditional initilization..
-aligner_dirs=()
-split_dirs=()
-bed_dirs=()
-peaks_dirs=()
-bw_dirs=()
+#TODO: add conditional initilization..
 #set other temp dir location
-TMPDIR=$temp_dir_base
-#some if statements that allow control over what is run and make sure the
-#right stuff is added to the appropriate arrays
-if [ $bowtie_1 -eq 1 ]; then
-  bt_1_files=$sample_dir/bowtie
-  bt_1_split=$bt_1_files/split_bam
-  bt_1_bed=$bt_1_files/bed_files
-  bt_1_peaks=$bt_1_files/peak_calling
-  bt_1_wg=$bt_1_files/wig_files
+TMPDIR=$temp_dir
 
-  mkdir -p $bt_1_split
-  mkdir -p $bt_1_peaks
-  mkdir -p $bt_1_bed
-  mkdir -p $bt_1_wg
+bam_files=$sample_dir/alignments
+split_bam=$bam_files/split_bam
+bed_files=$sample_dir/bed_files
+fseq_files=$sample_dir/fseq_peaks
+macs2_files=$sample_dir/macs2_peaks
+wig_files=$sample_dir/wig_files
 
-  aligner_dirs+=($bt_1_files)
-  split_dirs+=($bt_1_split)
-  bed_dirs+=($bt_1_bed)
-  peaks_dirs+=($bt_1_peaks)
-  bw_dirs+=($bt_1_wg)
+mkdir -p $split_bam
+mkdir -p $bed_files
+mkdir -p $fseq_files
+mkdir -p $wig_files
+
+f=($(ls $bam_files | grep -e "unique\.bam$"))
+
+if [[ "${#f[@]}" -ne "1" ]]; then
+  error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
 fi
 
-if [ $bowtie_2 -eq 1 ]; then
-  bt_2_files=$sample_dir/bowtie2
-  bt_2_split=$bt_2_files/split_bam
-  bt_2_bed=$bt_2_files/bed_files
-  bt_2_peaks=$bt_2_files/peak_calling
-  bt_2_wg=$bt_2_files/wig_files
+echo "Splitting bam files..."
+#get the subnucleosomal reads and sort them
+bamtools filter -in $bam_files/$f -script $subnucl_filter | \
+  samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
+samtools index $split_bam/${f%.*}.subnucl.bam
+#get the nucleosomal reads and sort them
+bamtools filter -in $bam_files/$f -script $nucl_filter | \
+  samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.nucl.bam
+samtools index $split_bam/${f%.*}.nucl.bam
+echo "Splitting bam files... - Done"
 
-  mkdir -p $bt_2_split
-  mkdir -p $bt_2_peaks
-  mkdir -p $bt_2_bed
-  mkdir -p $bt_2_wg
+echo "Converting bam files to bed..."
+#convert to bed, keep reads from nuclear chromosomes, then sort and store them
+bedtools bamtobed -i $bam_files/$f | grep "^Ath_chr[1-5]" |\
+  sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.bed
+bedtools bamtobed -i $bam_files/${f%.*}.subnucl.bam | \
+  grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.subnucl.bed
+bedtools bamtobed -i $bam_files/${f%.*}.nucl.bam | \
+  grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
+echo "Converting bam files to bed... - Done"
+#make some output folders
+mkdir -p $fseq_files/combined
+mkdir -p $fseq_files/subnucl
+mkdir -p $fseq_files/nucl
 
-  aligner_dirs+=($bt_2_files)
-  split_dirs+=($bt_2_split)
-  bed_dirs+=($bt_2_bed)
-  peaks_dirs+=($bt_2_peaks)
-  bw_dirs+=($bt_2_wg)
-fi
-# === end ENVIRONMENT SETUP ===
-##### Starting the ATAC-seq peak calling pipeline #####
-for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
+echo "Peak-calling with f-seq..."
+#run fseq on the different files...
+sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/combined \
+  $bed_files/${f%.*}.bed
+sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/subnucl \
+  $bed_files/${f%.*}.subnucl.bed
+sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/nucl \
+  $bed_files/${f%.*}.nucl.bed
+echo "Peak-calling with f-seq... - Done"
 
-  # Load the required modules each loop due to deeptools loading differnt libs
-  ml SAMtools/1.3.1-foss-2016a
-  ml BamTools/2.4.0-foss-2016a
-  ml BEDTools/2.26.0-foss-2016a
-  ml Java/1.8.0_66
+echo "Merging f-seq files..."
+#put the fseq output file names in some arrays
+fseq_combined=($(ls ${peaks_dirs[$i]}/combined | grep -e "Ath_chr[1-5].npf"))
+fseq_subnucl=($(ls ${peaks_dirs[$i]}/subnucl | grep -e "Ath_chr[1-5].npf"))
+fseq_nucl=($(ls ${peaks_dirs[$i]}/nucl | grep -e "Ath_chr[1-5].npf"))
+#concatenate them to one file and sort
+cd ${peaks_dirs[$i]}/combined
+cat ${fseq_combined[@]} | sort -k 1,1 -k2,2n > \
+  ${peaks_dirs[$i]}/combined/${f%.*}_combined_fseq.npf
 
-  echo "Running pipeline for aligner: ${aligner_dirs[$i]##/*/}"
+rm -v ${fseq_combined[@]}
 
-  f=($(ls ${aligner_dirs[$i]} | grep -e "\.bam$"))
+cd ${peaks_dirs[$i]}/subnucl
+cat ${fseq_subnucl[@]} | sort -k 1,1 -k2,2n > \
+  ${peaks_dirs[$i]}/subnucl/${f%.*}_subnucl_fseq.npf
+rm -v ${fseq_subnucl[@]}
 
-  if [[ "${#f[@]}" -ne "1" ]]; then
-    error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
-  fi
+cd ${peaks_dirs[$i]}/nucl
+cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
+  ${peaks_dirs[$i]}/nucl/${f%.*}_nucl_fseq.npf
+rm -v ${fseq_nucl[@]}
+echo "Merging f-seq files... - Done"
 
-  #FIXME: switch to a loop based system..
-  echo "Splitting bam files..."
-  #get the subnucleosomal reads and sort them
-  bamtools filter -in ${aligner_dirs[$i]}/$f -script $subnucl_filter | \
-    samtools sort -m 3G -@ $threads - -o ${split_dirs[$i]}/${f%.*}.subnucl.bam
-  samtools index ${split_dirs[$i]}/${f%.*}.subnucl.bam
-  #get the nucleosomal reads and sort them
-  bamtools filter -in ${aligner_dirs[$i]}/$f -script $nucl_filter | \
-    samtools sort -m 3G -@ $threads - -o ${split_dirs[$i]}/${f%.*}.nucl.bam
-  samtools index ${split_dirs[$i]}/${f%.*}.nucl.bam
-  #calculate some stats...
-  #reads_subnucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.subnucl.bam)
-  #reads_nucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.nucl.bam)
-  #enrichment_subncl=$(($reads_subnucl / $reads_nucl))
-  #some string assignments
-  #read_stats="Subnucleosomal reads: $reads_subnucl\n"
-  #read_stats+="Nucleosomal reads: $reads_nucl\n"
-  #read_stats+="Ratio: $enrichment_subncl"
-  #print and save them
-  #printf $read_stats | tee ${split_dirs[$i]}/ratios.txt
-  echo "Splitting bam files... - Done"
+echo "Creating normalized bigwig files..."
+#load module
+ml deepTools/2.2.4-foss-2015a-Python-2.7.9
+ml OpenSSL/1.0.1p-foss-2015a
 
-  echo "Converting bam files to bed..."
-  #convert to bed, keep reads from nuclear chromosomes, then sort and store them
-  bedtools bamtobed -i ${aligner_dirs[$i]}/$f | grep "^Ath_chr[1-5]" |\
-    sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.bed
-  bedtools bamtobed -i ${split_dirs[$i]}/${f%.*}.subnucl.bam | \
-    grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.subnucl.bed
-  bedtools bamtobed -i ${split_dirs[$i]}/${f%.*}.nucl.bam | \
-    grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.nucl.bed
-  echo "Converting bam files to bed... - Done"
-  #make some output folders
-  mkdir -p ${peaks_dirs[$i]}/combined
-  mkdir -p ${peaks_dirs[$i]}/subnucl
-  mkdir -p ${peaks_dirs[$i]}/nucl
+bamCoverage \
+  -b $bam_files/$f \
+  -o $wig_files/${f%.*}.bw \
+  --binSize=1 \
+  --normalizeTo1x $tair10_size \
+  --ignoreDuplicates \
+  --numberOfProcessors=$threads \
+  --ignoreForNormalization Ath_chrm Ath_chrc
 
-  echo "Peak-calling with f-seq..."
-  #run fseq on the different files...
-  sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/combined \
-    ${bed_dirs[$i]}/${f%.*}.bed
-  sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/subnucl \
-    ${bed_dirs[$i]}/${f%.*}.subnucl.bed
-  sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/nucl \
-    ${bed_dirs[$i]}/${f%.*}.nucl.bed
-  echo "Peak-calling with f-seq... - Done"
+bamCoverage \
+  -b $bam_files/${f%.*}.subnucl.bam  \
+  -o $wig_files/${f%.*}.subnucl.bw \
+  --binSize=1 \
+  --normalizeTo1x $tair10_size \
+  --ignoreDuplicates \
+  --numberOfProcessors=$threads \
+  --ignoreForNormalization Ath_chrm Ath_chrc
 
-  echo "Merging f-seq files..."
-  #put the fseq output file names in some arrays
-  fseq_combined=($(ls ${peaks_dirs[$i]}/combined | grep -e "Ath_chr[1-5].npf"))
-  fseq_subnucl=($(ls ${peaks_dirs[$i]}/subnucl | grep -e "Ath_chr[1-5].npf"))
-  fseq_nucl=($(ls ${peaks_dirs[$i]}/nucl | grep -e "Ath_chr[1-5].npf"))
-  #concatenate them to one file and sort
-  cd ${peaks_dirs[$i]}/combined
-  cat ${fseq_combined[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/combined/${f%.*}_combined_fseq.npf
-    #${peaks_dirs[$i]}/combined/${f%.*}_fseq_combined.npf
+bamCoverage \
+  -b $bam_files/${f%.*}.nucl.bam  \
+  -o $wig_files/${f%.*}.nucl.bw \
+  --binSize=1 \
+  --normalizeTo1x $tair10_size \
+  --ignoreDuplicates \
+  --numberOfProcessors=$threads \
+  --ignoreForNormalization Ath_chrm Ath_chrc
+echo "Creating normalized bigwig files... - Done"
 
-  rm -v ${fseq_combined[@]}
 
-  cd ${peaks_dirs[$i]}/subnucl
-  cat ${fseq_subnucl[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/subnucl/${f%.*}_subnucl_fseq.npf
-  rm -v ${fseq_subnucl[@]}
+echo "Peak-calling with MACS2"
+ml MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
-  cd ${peaks_dirs[$i]}/nucl
-  cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
-    ${peaks_dirs[$i]}/nucl/${f%.*}_nucl_fseq.npf
-  rm -v ${fseq_nucl[@]}
-  echo "Merging f-seq files... - Done"
+macs2 callpeak \
+  -t $bam_files/$f \
+  -f BAMPE \
+  -g $effective_genome_size \
+  -n ${f%.*} \
+  -B \
+  -m 5 50 \
+  --fix-bimodal \
+  -q 0.05 \
+  --call-summits \
+  --outdir $macs2_files/combined
 
-  echo "Creating normalized bigwig files..."
-  #load module
-  ml deepTools/2.2.4-foss-2015a-Python-2.7.9
-  ml OpenSSL/1.0.1p-foss-2015a
 
-  bamCoverage \
-    -b ${aligner_dirs[$i]}/$f \
-    -o ${bw_dirs[$i]}/${f%.*}.bw \
-    --binSize=1 \
-    --normalizeTo1x $tair10_size \
-    --ignoreDuplicates \
-    --numberOfProcessors=$threads \
-    --ignoreForNormalization Ath_chrm Ath_chrc
+macs2 callpeak \
+  -t $bam_files/${f%.*}.subnucl.bam \
+  -f BAMPE \
+  -g $effective_genome_size \
+  -n ${f%.*}_subnucl \
+  -B \
+  -m 5 50 \
+  --fix-bimodal \
+  -q 0.05 \
+  --call-summits \
+  --outdir $macs2_files/subnucl
 
-  bamCoverage \
-    -b ${split_dirs[$i]}/${f%.*}.subnucl.bam  \
-    -o ${bw_dirs[$i]}/${f%.*}.subnucl.bw \
-    --binSize=1 \
-    --normalizeTo1x $tair10_size \
-    --ignoreDuplicates \
-    --numberOfProcessors=$threads \
-    --ignoreForNormalization Ath_chrm Ath_chrc
+#call peaks for the nucleosomal fraction
+macs2 callpeak \
+  --broad \
+  -t $bam_files/${f%.*}.nucl.bam \
+  -f BAMPE \
+  -g $effective_genome_size \
+  -n ${f%.*}_nucl \
+  --outdir $macs2_files/nucl \
+  --nomodel \
+  --shift -37 \
+  --extsize 73 \
+  -B \
+  -q 0.05
+echo "Peak-calling with MACS2 - Done"
 
-  bamCoverage \
-    -b ${split_dirs[$i]}/${f%.*}.nucl.bam  \
-    -o ${bw_dirs[$i]}/${f%.*}.nucl.bw \
-    --binSize=1 \
-    --normalizeTo1x $tair10_size \
-    --ignoreDuplicates \
-    --numberOfProcessors=$threads \
-    --ignoreForNormalization Ath_chrm Ath_chrc
-  echo "Creating normalized bigwig files... - Done"
-
-  #TODO: implement removal of the old per chromosome files.
-  #rm -vr ${fseq_combined[@]}
-  #rm -vr ${fseq_subnucl[@]}
-  #rm -vr ${fseq_nucl[@]}
-done
 
 if [ $clean -eq 1 ]; then
   echo "Cleaning up..."
-  for dir in "${bed_dirs[@]}"
-  do
-    rm -rv $dir
-  done
+  rm -rv $bed_files
+  rm -rv $temp_dir
   echo "Cleaning up... - Done"
 fi
 
 
+
+# aligner_dirs=()
+# split_dirs=()
+# bed_dirs=()
+# peaks_dirs=()
+# bw_dirs=()
+#some if statements that allow control over what is run and make sure the
+#right stuff is added to the appropriate arrays
+# if [ $bowtie_1 -eq 1 ]; then
+#   bt_1_files=$sample_dir/bowtie
+#   bt_1_split=$bt_1_files/split_bam
+#   bt_1_bed=$bt_1_files/bed_files
+#   bt_1_peaks=$bt_1_files/peak_calling
+#   bt_1_wg=$bt_1_files/wig_files
+#
+#   mkdir -p $bt_1_split
+#   mkdir -p $bt_1_peaks
+#   mkdir -p $bt_1_bed
+#   mkdir -p $bt_1_wg
+#
+#   aligner_dirs+=($bt_1_files)
+#   split_dirs+=($bt_1_split)
+#   bed_dirs+=($bt_1_bed)
+#   peaks_dirs+=($bt_1_peaks)
+#   bw_dirs+=($bt_1_wg)
+# fi
+#
+# if [ $bowtie_2 -eq 1 ]; then
+#   bt_2_files=$sample_dir/bowtie2
+#   bt_2_split=$bt_2_files/split_bam
+#   bt_2_bed=$bt_2_files/bed_files
+#   bt_2_peaks=$bt_2_files/peak_calling
+#   bt_2_wg=$bt_2_files/wig_files
+#
+#   mkdir -p $bt_2_split
+#   mkdir -p $bt_2_peaks
+#   mkdir -p $bt_2_bed
+#   mkdir -p $bt_2_wg
+#
+#   aligner_dirs+=($bt_2_files)
+#   split_dirs+=($bt_2_split)
+#   bed_dirs+=($bt_2_bed)
+#   peaks_dirs+=($bt_2_peaks)
+#   bw_dirs+=($bt_2_wg)
+# fi
+# # === end ENVIRONMENT SETUP ===
+# ##### Starting the ATAC-seq peak calling pipeline #####
+# for (( i = 0 ; i < ${#aligner_dirs[@]} ; i++ )); do
+#
+#   # Load the required modules each loop due to deeptools loading differnt libs
+#   ml SAMtools/1.3.1-foss-2016a
+#   ml BamTools/2.4.0-foss-2016a
+#   ml BEDTools/2.26.0-foss-2016a
+#   ml Java/1.8.0_66
+#
+#   echo "Running pipeline for aligner: ${aligner_dirs[$i]##/*/}"
+#
+#   f=($(ls ${aligner_dirs[$i]} | grep -e "\.bam$"))
+#
+#   if [[ "${#f[@]}" -ne "1" ]]; then
+#     error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
+#   fi
+#
+#   #FIXME: switch to a loop based system..
+#   echo "Splitting bam files..."
+#   #get the subnucleosomal reads and sort them
+#   bamtools filter -in ${aligner_dirs[$i]}/$f -script $subnucl_filter | \
+#     samtools sort -m 3G -@ $threads - -o ${split_dirs[$i]}/${f%.*}.subnucl.bam
+#   samtools index ${split_dirs[$i]}/${f%.*}.subnucl.bam
+#   #get the nucleosomal reads and sort them
+#   bamtools filter -in ${aligner_dirs[$i]}/$f -script $nucl_filter | \
+#     samtools sort -m 3G -@ $threads - -o ${split_dirs[$i]}/${f%.*}.nucl.bam
+#   samtools index ${split_dirs[$i]}/${f%.*}.nucl.bam
+#   #calculate some stats...
+#   #reads_subnucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.subnucl.bam)
+#   #reads_nucl=$(samtools view -c -f 1 ${split_dirs[$i]}/${f%.*}.nucl.bam)
+#   #enrichment_subncl=$(($reads_subnucl / $reads_nucl))
+#   #some string assignments
+#   #read_stats="Subnucleosomal reads: $reads_subnucl\n"
+#   #read_stats+="Nucleosomal reads: $reads_nucl\n"
+#   #read_stats+="Ratio: $enrichment_subncl"
+#   #print and save them
+#   #printf $read_stats | tee ${split_dirs[$i]}/ratios.txt
+#   echo "Splitting bam files... - Done"
+#
+#   echo "Converting bam files to bed..."
+#   #convert to bed, keep reads from nuclear chromosomes, then sort and store them
+#   bedtools bamtobed -i ${aligner_dirs[$i]}/$f | grep "^Ath_chr[1-5]" |\
+#     sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.bed
+#   bedtools bamtobed -i ${split_dirs[$i]}/${f%.*}.subnucl.bam | \
+#     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.subnucl.bed
+#   bedtools bamtobed -i ${split_dirs[$i]}/${f%.*}.nucl.bam | \
+#     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > ${bed_dirs[$i]}/${f%.*}.nucl.bed
+#   echo "Converting bam files to bed... - Done"
+#   #make some output folders
+#   mkdir -p ${peaks_dirs[$i]}/combined
+#   mkdir -p ${peaks_dirs[$i]}/subnucl
+#   mkdir -p ${peaks_dirs[$i]}/nucl
+#
+#   echo "Peak-calling with f-seq..."
+#   #run fseq on the different files...
+#   sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/combined \
+#     ${bed_dirs[$i]}/${f%.*}.bed
+#   sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/subnucl \
+#     ${bed_dirs[$i]}/${f%.*}.subnucl.bed
+#   sh $fseq -v -f 0 -of npf -t 2.0 -o ${peaks_dirs[$i]}/nucl \
+#     ${bed_dirs[$i]}/${f%.*}.nucl.bed
+#   echo "Peak-calling with f-seq... - Done"
+#
+#   echo "Merging f-seq files..."
+#   #put the fseq output file names in some arrays
+#   fseq_combined=($(ls ${peaks_dirs[$i]}/combined | grep -e "Ath_chr[1-5].npf"))
+#   fseq_subnucl=($(ls ${peaks_dirs[$i]}/subnucl | grep -e "Ath_chr[1-5].npf"))
+#   fseq_nucl=($(ls ${peaks_dirs[$i]}/nucl | grep -e "Ath_chr[1-5].npf"))
+#   #concatenate them to one file and sort
+#   cd ${peaks_dirs[$i]}/combined
+#   cat ${fseq_combined[@]} | sort -k 1,1 -k2,2n > \
+#     ${peaks_dirs[$i]}/combined/${f%.*}_combined_fseq.npf
+#     #${peaks_dirs[$i]}/combined/${f%.*}_fseq_combined.npf
+#
+#   rm -v ${fseq_combined[@]}
+#
+#   cd ${peaks_dirs[$i]}/subnucl
+#   cat ${fseq_subnucl[@]} | sort -k 1,1 -k2,2n > \
+#     ${peaks_dirs[$i]}/subnucl/${f%.*}_subnucl_fseq.npf
+#   rm -v ${fseq_subnucl[@]}
+#
+#   cd ${peaks_dirs[$i]}/nucl
+#   cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
+#     ${peaks_dirs[$i]}/nucl/${f%.*}_nucl_fseq.npf
+#   rm -v ${fseq_nucl[@]}
+#   echo "Merging f-seq files... - Done"
+#
+#   echo "Creating normalized bigwig files..."
+#   #load module
+#   ml deepTools/2.2.4-foss-2015a-Python-2.7.9
+#   ml OpenSSL/1.0.1p-foss-2015a
+#
+#   bamCoverage \
+#     -b ${aligner_dirs[$i]}/$f \
+#     -o ${bw_dirs[$i]}/${f%.*}.bw \
+#     --binSize=1 \
+#     --normalizeTo1x $tair10_size \
+#     --ignoreDuplicates \
+#     --numberOfProcessors=$threads \
+#     --ignoreForNormalization Ath_chrm Ath_chrc
+#
+#   bamCoverage \
+#     -b ${split_dirs[$i]}/${f%.*}.subnucl.bam  \
+#     -o ${bw_dirs[$i]}/${f%.*}.subnucl.bw \
+#     --binSize=1 \
+#     --normalizeTo1x $tair10_size \
+#     --ignoreDuplicates \
+#     --numberOfProcessors=$threads \
+#     --ignoreForNormalization Ath_chrm Ath_chrc
+#
+#   bamCoverage \
+#     -b ${split_dirs[$i]}/${f%.*}.nucl.bam  \
+#     -o ${bw_dirs[$i]}/${f%.*}.nucl.bw \
+#     --binSize=1 \
+#     --normalizeTo1x $tair10_size \
+#     --ignoreDuplicates \
+#     --numberOfProcessors=$threads \
+#     --ignoreForNormalization Ath_chrm Ath_chrc
+#   echo "Creating normalized bigwig files... - Done"
+#
+#   #TODO: implement removal of the old per chromosome files.
+#   #rm -vr ${fseq_combined[@]}
+#   #rm -vr ${fseq_subnucl[@]}
+#   #rm -vr ${fseq_nucl[@]}
+# done
+#
+# if [ $clean -eq 1 ]; then
+#   echo "Cleaning up..."
+#   for dir in "${bed_dirs[@]}"
+#   do
+#     rm -rv $dir
+#   done
+#   echo "Cleaning up... - Done"
+# fi
+#
+#
 
 #
 #
