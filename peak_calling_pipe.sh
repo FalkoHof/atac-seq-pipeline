@@ -86,6 +86,7 @@ mkdir -p $split_bam
 mkdir -p $bed_files
 mkdir -p $fseq_files
 mkdir -p $wig_files
+mkdir -p $macs2_files
 
 f=($(ls $bam_files | grep -e "unique\.bam$"))
 
@@ -108,9 +109,9 @@ echo "Converting bam files to bed..."
 #convert to bed, keep reads from nuclear chromosomes, then sort and store them
 bedtools bamtobed -i $bam_files/$f | grep "^Ath_chr[1-5]" |\
   sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.bed
-bedtools bamtobed -i $bam_files/${f%.*}.subnucl.bam | \
+bedtools bamtobed -i $split_bam/${f%.*}.subnucl.bam | \
   grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.subnucl.bed
-bedtools bamtobed -i $bam_files/${f%.*}.nucl.bam | \
+bedtools bamtobed -i $split_bam/${f%.*}.nucl.bam | \
   grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
 echo "Converting bam files to bed... - Done"
 #make some output folders
@@ -166,7 +167,7 @@ bamCoverage \
   --ignoreForNormalization Ath_chrm Ath_chrc
 
 bamCoverage \
-  -b $bam_files/${f%.*}.subnucl.bam  \
+  -b $split_bam/${f%.*}.subnucl.bam  \
   -o $wig_files/${f%.*}.subnucl.bw \
   --binSize=1 \
   --normalizeTo1x $tair10_size \
@@ -175,7 +176,7 @@ bamCoverage \
   --ignoreForNormalization Ath_chrm Ath_chrc
 
 bamCoverage \
-  -b $bam_files/${f%.*}.nucl.bam  \
+  -b $split_bam/${f%.*}.nucl.bam  \
   -o $wig_files/${f%.*}.nucl.bw \
   --binSize=1 \
   --normalizeTo1x $tair10_size \
@@ -202,7 +203,7 @@ macs2 callpeak \
 
 
 macs2 callpeak \
-  -t $bam_files/${f%.*}.subnucl.bam \
+  -t $split_bam/${f%.*}.subnucl.bam \
   -f BAMPE \
   -g $effective_genome_size \
   -n ${f%.*}_subnucl \
@@ -216,7 +217,7 @@ macs2 callpeak \
 #call peaks for the nucleosomal fraction
 macs2 callpeak \
   --broad \
-  -t $bam_files/${f%.*}.nucl.bam \
+  -t $split_bam/${f%.*}.nucl.bam \
   -f BAMPE \
   -g $effective_genome_size \
   -n ${f%.*}_nucl \
