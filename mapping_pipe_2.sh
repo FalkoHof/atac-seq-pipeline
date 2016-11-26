@@ -33,7 +33,7 @@ names_mapped=($input_mapper)
 sample_dir=${names_mapped[1]} # get the sample dir
 sample_name=`basename $sample_dir` #get the base name of the dir as sample name
 
-temp_dir=$temp_dir_base/sample_name
+temp_dir=$temp_dir_base/$sample_name
 
 mkdir -p $temp_dir
 
@@ -143,11 +143,11 @@ if [ $align -eq 1 ]; then
     echo "Indexing bam files... - Done"
 fi
 
-if [ $clean  -eq 1 ]; then
+if [ $clean -eq 1 ]; then
   echo "Cleaning up..."
   rm -v $sample_dir/alignments/${f%.*}.sam
-  #rm -v $sample_dir/alignments/${f%.*}.sorted.bam
-  #rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
+  rm -v $sample_dir/alignments/${f%.*}.sorted.bam
+  rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
   rm -rv $sample_dir/fastq
   rm -rv $temp_dir
   echo "Cleaning up... - Done"
