@@ -20,7 +20,7 @@ clean=1
 
 # #TODO: set to the appropriate file
 # macs2_control=
-# effective_genome_size=1.2e8
+# tair10_size=1.2e8
 #set to the number of available cores
 threads=8
 #path from which the script is exectuted
@@ -186,6 +186,7 @@ echo "Creating normalized bigwig files... - Done"
 
 
 echo "Peak-calling with MACS2"
+ml reset
 ml MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
 mkdir -p $macs2_files/combined
@@ -195,7 +196,7 @@ mkdir -p $macs2_files/nucl
 macs2 callpeak \
   -t $bam_files/$f \
   -f BAMPE \
-  -g $effective_genome_size \
+  -g $tair10_size \
   -n ${f%.*} \
   -B \
   -m 5 50 \
@@ -208,7 +209,7 @@ macs2 callpeak \
 macs2 callpeak \
   -t $split_bam/${f%.*}.subnucl.bam \
   -f BAMPE \
-  -g $effective_genome_size \
+  -g $tair10_size \
   -n ${f%.*}_subnucl \
   -B \
   -m 5 50 \
@@ -222,7 +223,7 @@ macs2 callpeak \
   --broad \
   -t $split_bam/${f%.*}.nucl.bam \
   -f BAMPE \
-  -g $effective_genome_size \
+  -g $tair10_size \
   -n ${f%.*}_nucl \
   --outdir $macs2_files/nucl \
   --nomodel \
@@ -435,7 +436,7 @@ fi
 #       -t $treatment \
 #       -c $control \
 #       -f BAMPE \
-#       -g $effective_genome_size \
+#       -g $tair10_size \
 #       -n $name \
 #       -B \
 #       -m 5 50 \
@@ -443,7 +444,7 @@ fi
 #       -q 0.05 \
 #       --call-summits \
 #
-#       effective_genome_size=1.2e8
+#       tair10_size=1.2e8
 #
 #
 #   #TODO: load moduleß
