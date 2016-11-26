@@ -132,7 +132,7 @@ if [ $align -eq 1 ]; then
     samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.bam
 
-    samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam | \
+    samtools view -bhf 0x2 -q 40 $sample_dir/alignments/${f%.*}.no_dups.bam | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.unique.bam
     echo "Quality filtering... - Done"
 
@@ -146,9 +146,9 @@ fi
 if [ $clean  -eq 1 ]; then
   echo "Cleaning up..."
   rm -v $sample_dir/alignments/${f%.*}.sam
-  rm -v $sample_dir/alignments/${f%.*}.sorted.bam
-  rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
+  #rm -v $sample_dir/alignments/${f%.*}.sorted.bam
+  #rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
   rm -rv $sample_dir/fastq
-  rm -r $temp_dir
+  rm -rv $temp_dir
   echo "Cleaning up... - Done"
 fi
