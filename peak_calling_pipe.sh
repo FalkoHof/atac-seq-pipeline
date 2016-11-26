@@ -229,7 +229,6 @@ macs2 callpeak \
   -q 0.05
 echo "Peak-calling with MACS2 - Done"
 
-
 if [ $clean -eq 1 ]; then
   echo "Cleaning up..."
   rm -rv $bed_files
