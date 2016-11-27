@@ -17,10 +17,6 @@ run_fseq=1
 run_macs2=1
 create_wig=1
 clean=1
-
-# #TODO: set to the appropriate file
-# macs2_control=
-# tair10_size=1.2e8
 #set to the number of available cores
 threads=8
 #path from which the script is exectuted
