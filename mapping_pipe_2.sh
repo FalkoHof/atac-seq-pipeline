@@ -67,7 +67,7 @@ adaptor_2=CTGTCTCTTATACACATCTGACGCTGCCGACGA
 f=($(ls $sample_dir | grep -e ".bam"))
 #throw error if more or less than 1 file is present
 if [[ "${#f[@]}" -ne "1" ]]; then
-  error_exit "Error: wrong number of bam files in folder. Files present: ${#f[@]}"
+  error_exit "#Error: wrong number of bam files in folder. Files present: ${#f[@]}"
 fi
 
 fastq_dir=$sample_dir/fastq
@@ -75,7 +75,7 @@ mkdir -p $fastq_dir
 mkdir -p $sample_dir/logs
 
 if [ $convert_bam -eq 1 ]; then
-  echo "Converting bam to fastq..."
+  echo "#Converting bam to fastq..."
 
   mkdir -p $sample_dir/fastq
   #do the sorting....
@@ -85,9 +85,9 @@ if [ $convert_bam -eq 1 ]; then
   bedtools bamtofastq -i $fastq_dir/${f%.*}.sorted.bam  \
     -fq $fastq_dir/${f%.*}.1.fq  \
     -fq2 $fastq_dir/${f%.*}.2.fq
-  echo "Converting bam to fastq... - Done"
+  echo "#Converting bam to fastq... - Done"
 
-  echo "Trimming adaptors with skewer..."
+  echo "#Trimming adaptors with skewer..."
   #run skewer
   $skewer \
     -x $adaptor_1 \
@@ -97,12 +97,12 @@ if [ $convert_bam -eq 1 ]; then
     --quiet
 
   mv -v $fastq_dir/*.log $sample_dir/logs
-  echo "Trimming adaptors with skewer... - Done"
+  echo "#Trimming adaptors with skewer... - Done"
 fi
 
 if [ $align -eq 1 ]; then
 
-    echo "Aligning with bowtie2..."
+    echo "#Aligning with bowtie2..."
     mkdir -p $sample_dir/alignments
 
     bowtie2 --threads $threads \
@@ -113,42 +113,42 @@ if [ $align -eq 1 ]; then
       -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
       -S $sample_dir/alignments/${f%.*}.sam \
       2> $sample_dir/logs/${f%.*}_summary.txt
-    echo "Aligning with bowtie2... - Done"
+    echo "#Aligning with bowtie2... - Done"
 
-    echo "Converting to bam..."
+    echo "#Converting to bam..."
     samtools sort -m 3G -@ $threads $sample_dir/alignments/${f%.*}.sam \
       -o $sample_dir/alignments/${f%.*}.sorted.bam
-    echo "Converting to bam... - Done"
+    echo "#Converting to bam... - Done"
 
-    echo "Removing duplicates..."
+    echo "#Removing duplicates..."
     java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
       I=$sample_dir/alignments/${f%.*}.sorted.bam \
       O=$sample_dir/alignments/${f%.*}.no_dups.bam \
       M=$sample_dir/logs/${f%.*}dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
-    echo "Removing duplicates... - Done"
+    echo "#Removing duplicates... - Done"
 
-    echo "Quality filtering..."
+    echo "#Quality filtering..."
     samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.bam
 
     samtools view -bhf 0x2 -q 40 $sample_dir/alignments/${f%.*}.no_dups.bam | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.unique.bam
-    echo "Quality filtering... - Done"
+    echo "#Quality filtering... - Done"
 
-    echo "Indexing bam files..."
+    echo "#Indexing bam files..."
     #indes the bam file for downstream applications..
     samtools index $sample_dir/alignments/${f%.*}.bam
     samtools index $sample_dir/alignments/${f%.*}.unique.bam
-    echo "Indexing bam files... - Done"
+    echo "#Indexing bam files... - Done"
 fi
 
 if [ $clean -eq 1 ]; then
-  echo "Cleaning up..."
+  echo "#Cleaning up..."
   rm -v $sample_dir/alignments/${f%.*}.sam
   rm -v $sample_dir/alignments/${f%.*}.sorted.bam
   rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
   rm -rv $sample_dir/fastq
   rm -rv $temp_dir
-  echo "Cleaning up... - Done"
+  echo "##Cleaning up... - Done"
 fi
