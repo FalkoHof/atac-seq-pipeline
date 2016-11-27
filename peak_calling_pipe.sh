@@ -77,12 +77,6 @@ fseq_files=$sample_dir/fseq_peaks
 macs2_files=$sample_dir/macs2_peaks
 wig_files=$sample_dir/wig_files
 
-mkdir -p $split_bam
-mkdir -p $bed_files
-mkdir -p $fseq_files
-mkdir -p $wig_files
-mkdir -p $macs2_files
-
 f=($(ls $bam_files | grep -e "unique\.bam$"))
 
 if [[ "${#f[@]}" -ne "1" ]]; then
@@ -91,6 +85,7 @@ fi
 
 if [ $split_files -eq 1 ]; then
   echo "Splitting bam files..."
+  mkdir -p $split_bam
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/$f -script $subnucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
@@ -104,6 +99,7 @@ fi
 
 if [ $create_bed -eq 1 ]; then
   echo "Converting bam files to bed..."
+  mkdir -p $bed_files
   #convert to bed, keep reads from nuclear chromosomes, then sort and store them
   bedtools bamtobed -i $bam_files/$f | grep "^Ath_chr[1-5]" |\
     sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.bed
@@ -116,7 +112,6 @@ fi
 
 if [ $run_fseq -eq 1 ]; then
   echo "Peak-calling with f-seq..."
-  #make some output folders
   mkdir -p $fseq_files/combined
   mkdir -p $fseq_files/subnucl
   mkdir -p $fseq_files/nucl
@@ -154,6 +149,7 @@ fi
 
 if [ $create_wig -eq 1 ]; then
   echo "Creating normalized bigwig files..."
+  mkdir -p $wig_files
   #load module
   ml deepTools/2.2.4-foss-2015a-Python-2.7.9
   ml OpenSSL/1.0.1p-foss-2015a
@@ -189,6 +185,7 @@ fi
 
 if [ $run_macs2 -eq 1 ]; then
   echo "Peak-calling with MACS2"
+  mkdir -p $macs2_files
   ml reset
   ml MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
 
