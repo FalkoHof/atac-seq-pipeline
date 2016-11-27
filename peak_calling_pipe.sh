@@ -84,7 +84,7 @@ if [[ "${#f[@]}" -ne "1" ]]; then
 fi
 
 if [ $split_files -eq 1 ]; then
-  echo "Splitting bam files..."
+  echo "#Splitting bam files..."
   mkdir -p $split_bam
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/$f -script $subnucl_filter | \
@@ -94,11 +94,11 @@ if [ $split_files -eq 1 ]; then
   bamtools filter -in $bam_files/$f -script $nucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.nucl.bam
   samtools index $split_bam/${f%.*}.nucl.bam
-  echo "Splitting bam files... - Done"
+  echo "#Splitting bam files... - Done"
 fi
 
 if [ $create_bed -eq 1 ]; then
-  echo "Converting bam files to bed..."
+  echo "#Converting bam files to bed..."
   mkdir -p $bed_files
   #convert to bed, keep reads from nuclear chromosomes, then sort and store them
   bedtools bamtobed -i $bam_files/$f | grep "^Ath_chr[1-5]" |\
@@ -107,11 +107,11 @@ if [ $create_bed -eq 1 ]; then
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.subnucl.bed
   bedtools bamtobed -i $split_bam/${f%.*}.nucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
-  echo "Converting bam files to bed... - Done"
+  echo "#Converting bam files to bed... - Done"
 fi
 
 if [ $run_fseq -eq 1 ]; then
-  echo "Peak-calling with f-seq..."
+  echo "#Peak-calling with f-seq..."
   mkdir -p $fseq_files/combined
   mkdir -p $fseq_files/subnucl
   mkdir -p $fseq_files/nucl
@@ -122,9 +122,9 @@ if [ $run_fseq -eq 1 ]; then
     $bed_files/${f%.*}.subnucl.bed
   sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/nucl \
     $bed_files/${f%.*}.nucl.bed
-  echo "Peak-calling with f-seq... - Done"
+  echo "#Peak-calling with f-seq... - Done"
 
-  echo "Merging f-seq files..."
+  echo "#Merging f-seq files..."
   #put the fseq output file names in some arrays
   fseq_combined=($(ls $fseq_files/combined | grep -e "Ath_chr[1-5].npf"))
   fseq_subnucl=($(ls $fseq_files/subnucl | grep -e "Ath_chr[1-5].npf"))
@@ -144,11 +144,11 @@ if [ $run_fseq -eq 1 ]; then
   cat ${fseq_nucl[@]} | sort -k 1,1 -k2,2n > \
     $fseq_files/nucl/${f%.*}_nucl_fseq.npf
   rm -v ${fseq_nucl[@]}
-  echo "Merging f-seq files... - Done"
+  echo "#Merging f-seq files... - Done"
 fi
 
 if [ $create_wig -eq 1 ]; then
-  echo "Creating normalized bigwig files..."
+  echo "#Creating normalized bigwig files..."
   mkdir -p $wig_files
   #load module
   ml deepTools/2.2.4-foss-2015a-Python-2.7.9
@@ -180,11 +180,11 @@ if [ $create_wig -eq 1 ]; then
     --ignoreDuplicates \
     --numberOfProcessors=$threads \
     --ignoreForNormalization Ath_chrm Ath_chrc
-  echo "Creating normalized bigwig files... - Done"
+  echo "#Creating normalized bigwig files... - Done"
 fi
 
 if [ $run_macs2 -eq 1 ]; then
-  echo "Peak-calling with MACS2"
+  echo "#Peak-calling with MACS2"
   mkdir -p $macs2_files
   ml reset
   ml MACS/2.1.0.20150420.1-goolf-1.4.10-Python-2.7.5
@@ -230,14 +230,14 @@ if [ $run_macs2 -eq 1 ]; then
     --extsize 73 \
     -B \
     -q 0.05
-  echo "Peak-calling with MACS2 - Done"
+  echo "#Peak-calling with MACS2 - Done"
 fi
 
 if [ $clean -eq 1 ]; then
-  echo "Cleaning up..."
+  echo "#Cleaning up..."
   rm -rv $bed_files
   rm -rv $temp_dir
-  echo "Cleaning up... - Done"
+  echo "#Cleaning up... - Done"
 fi
 
-echo 'Peak-calling pipeline complete!'
+echo '##Peak-calling pipeline complete!'
