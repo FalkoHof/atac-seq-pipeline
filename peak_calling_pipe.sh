@@ -17,6 +17,8 @@ run_fseq=1
 run_macs2=1
 create_wig=1
 clean=1
+#TODO: move this upstream to the mapping pipe
+regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
 #set to the number of available cores
 threads=8
 #path from which the script is exectuted
@@ -76,7 +78,6 @@ fseq_files=$sample_dir/fseq_peaks
 macs2_files=$sample_dir/macs2_peaks
 wig_files=$sample_dir/wig_files
 
-regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
 
 f=($(ls $bam_files | grep -e "unique\.bam$"))
 
@@ -163,6 +164,7 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
+    --maxFragmentLength 2000 \
     --numberOfProcessors=$threads
     #--ignoreForNormalization Ath_chrm Ath_chrc
 
@@ -172,6 +174,7 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
+    --maxFragmentLength 100 \
     --numberOfProcessors=$threads
     #--ignoreForNormalization Ath_chrm Ath_chrc
 
@@ -181,6 +184,7 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
+    --maxFragmentLength 2000 \
     --numberOfProcessors=$threads
     #--ignoreForNormalization Ath_chrm Ath_chrc
   echo "#Creating normalized bigwig files... - Done"
