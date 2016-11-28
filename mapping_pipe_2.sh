@@ -4,7 +4,7 @@
 #PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/161124_atac-seq/161124_atac-seq_^array_index^_mapping.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/161127_atac-seq/161127_atac-seq_^array_index^_mapping.log
 #PBS -l walltime=12:00:00
 #PBS -l select=1:ncpus=16:mem=64gb
 
