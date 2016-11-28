@@ -131,6 +131,9 @@ if [ $align -eq 1 ]; then
     echo "#Removing duplicates... - Done"
 
     echo "#Quality filtering..."
+    #indexing is required for retival
+    samtools index $sample_dir/alignments/${f%.*}.no_dups.bam
+
     samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam \
       $regions_to_keep | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.bam
@@ -152,6 +155,7 @@ if [ $clean -eq 1 ]; then
   rm -v $sample_dir/alignments/${f%.*}.sam
   rm -v $sample_dir/alignments/${f%.*}.sorted.bam
   rm -v $sample_dir/alignments/${f%.*}.no_dups.bam
+  rm -v $sample_dir/alignments/${f%.*}.no_dups.bam.bai
   rm -rv $sample_dir/fastq
   rm -rv $temp_dir
   echo "##Cleaning up... - Done"
