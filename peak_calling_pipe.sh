@@ -34,7 +34,6 @@ nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
 fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
 #igvtools=/lustre/scratch/users/$USER/software/IGVTools/igvtools
 tair10_size=119146348
-
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as line number
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $pbs_mapping_file` #read mapping file
 names_mapped=($input_mapper)
@@ -77,6 +76,8 @@ fseq_files=$sample_dir/fseq_peaks
 macs2_files=$sample_dir/macs2_peaks
 wig_files=$sample_dir/wig_files
 
+regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
+
 f=($(ls $bam_files | grep -e "unique\.bam$"))
 
 if [[ "${#f[@]}" -ne "1" ]]; then
@@ -88,10 +89,12 @@ if [ $split_files -eq 1 ]; then
   mkdir -p $split_bam
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/$f -script $subnucl_filter | \
+    samtools view - $regions_to_keep | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
   samtools index $split_bam/${f%.*}.subnucl.bam
   #get the nucleosomal reads and sort them
   bamtools filter -in $bam_files/$f -script $nucl_filter | \
+    samtools view - $regions_to_keep | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.nucl.bam
   samtools index $split_bam/${f%.*}.nucl.bam
   echo "#Splitting bam files... - Done"
@@ -160,8 +163,8 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
-    --numberOfProcessors=$threads \
-    --ignoreForNormalization Ath_chrm Ath_chrc
+    --numberOfProcessors=$threads
+    #--ignoreForNormalization Ath_chrm Ath_chrc
 
   bamCoverage \
     -b $split_bam/${f%.*}.subnucl.bam  \
@@ -169,8 +172,8 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
-    --numberOfProcessors=$threads \
-    --ignoreForNormalization Ath_chrm Ath_chrc
+    --numberOfProcessors=$threads
+    #--ignoreForNormalization Ath_chrm Ath_chrc
 
   bamCoverage \
     -b $split_bam/${f%.*}.nucl.bam  \
@@ -178,8 +181,8 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
-    --numberOfProcessors=$threads \
-    --ignoreForNormalization Ath_chrm Ath_chrc
+    --numberOfProcessors=$threads
+    #--ignoreForNormalization Ath_chrm Ath_chrc
   echo "#Creating normalized bigwig files... - Done"
 fi
 
