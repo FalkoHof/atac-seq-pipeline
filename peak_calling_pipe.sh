@@ -165,7 +165,7 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
-    --maxFragmentLength 2000 \
+    --maxFragmentLength=2000 \
     --numberOfProcessors=$threads
     #--ignoreForNormalization Ath_chrm Ath_chrc
 
@@ -175,7 +175,7 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
-    --maxFragmentLength 100 \
+    --maxFragmentLength=100 \
     --numberOfProcessors=$threads
     #--ignoreForNormalization Ath_chrm Ath_chrc
 
@@ -185,7 +185,7 @@ if [ $create_wig -eq 1 ]; then
     --binSize=1 \
     --normalizeTo1x $tair10_size \
     --ignoreDuplicates \
-    --maxFragmentLength 2000 \
+    --maxFragmentLength=2000 \
     --numberOfProcessors=$threads
     #--ignoreForNormalization Ath_chrm Ath_chrc
   echo "#Creating normalized bigwig files... - Done"
