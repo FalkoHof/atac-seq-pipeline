@@ -18,7 +18,7 @@ pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
 temp_dir_base=$base_dir/temp
 
-chroms_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
+regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
 
 #convert bam to fastq
 convert_bam=1
@@ -131,12 +131,12 @@ if [ $align -eq 1 ]; then
     echo "#Removing duplicates... - Done"
 
     echo "#Quality filtering..."
-    samtools view -bhf 0x2 -q 30 $chroms_to_keep \
-      $sample_dir/alignments/${f%.*}.no_dups.bam | \
+    samtools view -bhf 0x2 -q 30 $sample_dir/alignments/${f%.*}.no_dups.bam \
+      $regions_to_keep | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.bam
 
-    samtools view -bhf 0x2 -q 40 $chroms_to_keep \
-      $sample_dir/alignments/${f%.*}.no_dups.bam | \
+    samtools view -bhf 0x2 -q 40 $sample_dir/alignments/${f%.*}.no_dups.bam \
+      $regions_to_keep | \
       samtools sort -m 3G -@ $threads - -o $sample_dir/alignments/${f%.*}.unique.bam
     echo "#Quality filtering... - Done"
 
