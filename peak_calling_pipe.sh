@@ -17,8 +17,6 @@ run_fseq=1
 run_macs2=1
 create_wig=1
 clean=1
-#TODO: move this upstream to the mapping pipe
-regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
 #set to the number of available cores
 threads=8
 #path from which the script is exectuted
@@ -91,12 +89,10 @@ if [ $split_files -eq 1 ]; then
   mkdir -p $split_bam
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/$f -script $subnucl_filter | \
-    samtools view - $regions_to_keep | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
   samtools index $split_bam/${f%.*}.subnucl.bam
   #get the nucleosomal reads and sort them
   bamtools filter -in $bam_files/$f -script $nucl_filter | \
-    samtools view - $regions_to_keep | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.nucl.bam
   samtools index $split_bam/${f%.*}.nucl.bam
   echo "#Splitting bam files... - Done"
