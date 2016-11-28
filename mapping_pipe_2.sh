@@ -57,8 +57,8 @@ function error_exit
 #load some modules...
 ml SAMtools/1.3.1-foss-2015b
 ml BEDTools/2.26.0-foss-2015b
-ml picard/2.3.0
 ml Bowtie2/2.2.7-foss-2015b
+ml picard/2.3.0
 
 #specify some variables for adaptor trimming...
 skewer=/lustre/scratch/users/falko.hofmann/software/skewer/skewer
@@ -79,7 +79,6 @@ mkdir -p $sample_dir/logs
 if [ $convert_bam -eq 1 ]; then
   echo "#Converting bam to fastq..."
 
-  mkdir -p $sample_dir/fastq
   #do the sorting....
   samtools sort -n -m 3G -@ $threads -o $fastq_dir/${f%.*}.sorted.bam \
     $sample_dir/$f
