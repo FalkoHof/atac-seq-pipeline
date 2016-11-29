@@ -113,7 +113,7 @@ if [ $align -eq 1 ]; then
       -1 $fastq_dir/${f%.*}-trimmed-pair1.fastq \
       -2 $fastq_dir/${f%.*}-trimmed-pair2.fastq \
       -S $sample_dir/alignments/${f%.*}.sam \
-      2> $sample_dir/logs/${f%.*}_summary.txt
+      2> $sample_dir/logs/${f%.*}_bt2_summary.txt
     echo "#Aligning with bowtie2... - Done"
 
     echo "#Converting to bam..."
@@ -125,7 +125,7 @@ if [ $align -eq 1 ]; then
     java -jar -Xmx60g ${EBROOTPICARD}/picard.jar MarkDuplicates \
       I=$sample_dir/alignments/${f%.*}.sorted.bam \
       O=$sample_dir/alignments/${f%.*}.no_dups.bam \
-      M=$sample_dir/logs/${f%.*}dup_metrics.txt \
+      M=$sample_dir/logs/${f%.*}_dup_metrics.txt \
       AS=true REMOVE_DUPLICATES=true TMP_DIR=$temp_dir
     echo "#Removing duplicates... - Done"
 
