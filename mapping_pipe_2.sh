@@ -16,10 +16,7 @@ bt_2_index=/lustre/scratch/users/$USER/indices/bowtie2/Col-0
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
-temp_dir_base=$base_dir/temp
-
-regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
-
+temp_dir_base=/lustre/scratch/users/$USER/temp/atac-seq_mapping
 #convert bam to fastq
 convert_bam=1
 #delete unecessary files
@@ -28,6 +25,8 @@ clean=1
 align=1
 #specify number of threads
 threads=16 #set this to the number of available cores
+#names of the Chromosomes kept for downstream analysis
+regions_to_keep="Ath_chr1 Ath_chr2 Ath_chr3 Ath_chr4 Ath_chr5"
 
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as line number
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $pbs_mapping_file` #read mapping file
@@ -44,7 +43,7 @@ echo '#########################################################################'
 echo 'Starting ATAC-seq pipeline for: ' $sample_name
 echo 'Sample directory: ' $sample_dir
 echo 'Mapping file: ' $pbs_mapping_file
-#IDEA: maybe add some diagnostic output about bt1 and bt2
+echo 'Chromosomes to keep: '$regions_to_keep
 echo '#########################################################################'
 
 #some error handling function

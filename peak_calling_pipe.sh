@@ -26,7 +26,7 @@ base_dir=/lustre/scratch/users/$USER/atac-seq
 #location of the mapping file for the array job
 pbs_mapping_file=$pipe_dir/pbs_mapping_file.txt
 #super folder of the temp dir, script will create subfolders with $sample_name
-temp_dir_base=$base_dir/temp
+temp_dir_base=/lustre/scratch/users/$USER/temp/atac-seq_peak-calling
 #json filters for bamtools
 subnucl_filter=$pipe_dir/bamtools_filter/bamtools_subnucl.json
 nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
@@ -40,10 +40,6 @@ names_mapped=($input_mapper)
 sample_dir=${names_mapped[1]} # get the sample dir
 sample_name=`basename $sample_dir` #get the base name of the dir as sample name
 
-temp_dir=$temp_dir_base/$sample_name
-
-mkdir -p $temp_dir
-
 #print some output for logging
 echo '#########################################################################'
 echo 'Starting ATAC-seq peak-calling pipeline for: ' $sample_name
@@ -51,6 +47,10 @@ echo 'Sample directory: ' $sample_dir
 echo 'Mapping file: ' $pbs_mapping_file
 #IDEA: maybe add some diagnostic output the chosen modes.
 echo '#########################################################################'
+
+temp_dir=$temp_dir_base/$sample_name
+mkdir -p $temp_dir
+export TMPDIR=$temp_dir
 
 # Load the required modules each loop due to deeptools loading differnt libs
 ml BamTools/2.4.0-foss-2016a
@@ -68,7 +68,6 @@ function error_exit
 
 #TODO: add conditional initilization..
 #set other temp dir location
-TMPDIR=$temp_dir
 
 bam_files=$sample_dir/alignments
 split_bam=$bam_files/split_bam
@@ -76,7 +75,6 @@ bed_files=$sample_dir/bed_files
 fseq_files=$sample_dir/fseq_peaks
 macs2_files=$sample_dir/macs2_peaks
 wig_files=$sample_dir/wig_files
-
 
 f=($(ls $bam_files | grep -e "unique\.bam$"))
 
