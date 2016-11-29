@@ -58,7 +58,7 @@ ml BamTools/2.4.0-foss-2016a
 ml BEDTools/2.26.0-foss-2016a
 ml Java/1.8.0_66
 ml SAMtools/1.3.1-foss-2016a
-
+c
 #some error handling function
 function error_exit
 {
@@ -106,8 +106,14 @@ if [ $create_bed -eq 1 ]; then
   bedtools bamtobed -i $split_bam/${f%.*}.nucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
 
+  #TODO switch to a bam based approach!
   echo "##Calculating length profiles..."
   mkdir -p $frag_len_dir
+  samtools sort -n -m 3G -@ $threads -o $frag_len_dir/${f%.*}.name_sorted.bam  \
+    $bam_files/$f
+  bedtools bamtobed -i $frag_len_dir/${f%.*}.name_sorted.bam > \
+    $frag_len_dir/${f%.*}.name_sorted.bed >
+
   python $pipe_dir/extract_read_length.py -g -v -o $frag_len_dir \
     $bed_files/$bed_files/${f%.*}.bed
   echo "##Calculating length profiles... - Done"
