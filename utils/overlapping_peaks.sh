@@ -8,11 +8,12 @@
 # make sure beedtools is in your path
 # ml BEDTools/2.26.0-foss-2016a
 
-bed_files=$1
+bed_files_grp1=$1
 bedtools_out=$2
 
-mkdir -p $bedtools_out
-mkdir $deeptools_out
+if [ ! -d "$bedtools_out" ]; then
+  mkdir -p $bedtools_out
+fi
 
 #1. substract and intersect bed files
 for f1 in $bed_files
@@ -24,7 +25,8 @@ do
       name1=${f1%%.*}
       name2=${f2%%.*}
       bedtools substract -a $f1 - b $f2 > $bedtools_out/$name1$name2_substract.bed
-      bedtools intersect -a $f1 - b $f2 -wa > $bedtools_out/$name1$name2_intersect.bed
+      bedtools intersect -a $f1 - b $f2 -f 0.9 -r -wa -v > \
+        $bedtools_out/$name1$name2_uniqe.bed
     fi
   done
 done
