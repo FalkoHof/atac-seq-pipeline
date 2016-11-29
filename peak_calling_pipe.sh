@@ -48,6 +48,7 @@ echo 'Mapping file: ' $pbs_mapping_file
 #IDEA: maybe add some diagnostic output the chosen modes.
 echo '#########################################################################'
 
+#set other temp dir location for deeptools etc.
 temp_dir=$temp_dir_base/$sample_name
 mkdir -p $temp_dir
 export TMPDIR=$temp_dir
@@ -58,7 +59,6 @@ ml BEDTools/2.26.0-foss-2016a
 ml Java/1.8.0_66
 ml SAMtools/1.3.1-foss-2016a
 
-
 #some error handling function
 function error_exit
 {
@@ -66,9 +66,7 @@ function error_exit
   exit 1
 }
 
-#TODO: add conditional initilization..
-#set other temp dir location
-
+#TODO: add conditional intialization
 bam_files=$sample_dir/alignments
 split_bam=$bam_files/split_bam
 bed_files=$sample_dir/bed_files
