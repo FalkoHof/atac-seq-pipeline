@@ -107,6 +107,7 @@ if [ $create_bed -eq 1 ]; then
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
 
   echo "##Calculating length profiles..."
+  mkdir -p $frag_len_dir
   python $pipe_dir/extract_read_length.py -g -v -o $frag_len_dir \
     $bed_files/$bed_files/${f%.*}.bed
   echo "##Calculating length profiles... - Done"
