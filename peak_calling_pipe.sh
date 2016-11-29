@@ -73,6 +73,7 @@ bed_files=$sample_dir/bed_files
 fseq_files=$sample_dir/fseq_peaks
 macs2_files=$sample_dir/macs2_peaks
 wig_files=$sample_dir/wig_files
+frag_len_dir=$sample_dir/frag_size
 
 f=($(ls $bam_files | grep -e "unique\.bam$"))
 
@@ -104,6 +105,11 @@ if [ $create_bed -eq 1 ]; then
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.subnucl.bed
   bedtools bamtobed -i $split_bam/${f%.*}.nucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
+
+  echo "##Calculating length profiles..."
+  python $pipe_dir/extract_read_length.py -g -v -o $frag_len_dir \
+    $bed_files/$bed_files/${f%.*}.bed
+  echo "##Calculating length profiles... - Done"
   echo "#Converting bam files to bed... - Done"
 fi
 
