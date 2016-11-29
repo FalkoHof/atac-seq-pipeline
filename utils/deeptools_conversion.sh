@@ -60,6 +60,7 @@ dt_multi_bam_summmary ()
 param_1=()
 param_1+=("BED-file --BED $bed_file")
 param_1+=("bins -bs 100")
+param_1+=("bins -bs 500")
 param_1+=("bins -bs 1000")
 
 param_2=$bam_files
@@ -67,6 +68,7 @@ param_2=$bam_files
 param_3=()
 param_3+=("$dt_out/bw_compare_${bed_file%%.*}.npz")
 param_3+=("$dt_out/bw_compare_bins_100bp.npz")
+param_3+=("$dt_out/bw_compare_bins_500bp.npz")
 param_3+=("$dt_out/bw_compare_bins_1000bp.npz")
 
 #some nested loops that execture the respective commands for the comparison

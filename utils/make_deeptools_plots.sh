@@ -64,3 +64,6 @@ for i in "${!params_plot[@]}"; do
 done
 
 #2. plot pca
+
+plotPCA -in $dt_corr_f \
+  -o ${dt_corr_f%.*}_pca.pdf
