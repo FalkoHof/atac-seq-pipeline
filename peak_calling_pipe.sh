@@ -58,7 +58,8 @@ ml BamTools/2.4.0-foss-2016a
 ml BEDTools/2.26.0-foss-2016a
 ml Java/1.8.0_66
 ml SAMtools/1.3.1-foss-2016a
-c
+ml Python/2.7.11-intel-2016a
+
 #some error handling function
 function error_exit
 {
