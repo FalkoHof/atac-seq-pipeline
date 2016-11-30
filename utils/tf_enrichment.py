@@ -26,37 +26,17 @@ def hypergeom_test(sample_dict, sample_size, background_dict, background_size):
     M = background_size
     N = sample_size
     for sample in sample_dict:
-        n = sample_dict[sample]
+        tf_sample = sample_dict[sample]
+        tf_background = background_dict[sample]
 
-        stats.fisher_exact([8,2])
-
-
-
-
-        Atlantic  Indian
-whales     8        2
-sharks     1        5
-
-
-        open_chrom  genome
-whales     8        2
-sharks     1        5
-
-
-We use this table to find the p-value:
->>>
-
->>> import scipy.stats as stats
->>> oddsratio, pvalue = stats.fisher_exact([[8, 2], [1, 5]])
-
-
->>> pvalue
-0.0349...
-
-
-
-
-
+        oddsratio,p_value = stats.fisher_exact(([tf_sample, sample_size-tf_sample],
+                            [tf_background,background_size-tf_background]),
+                            'greater')
+#
+#             tf_x                                all_tfs
+# open_chrom  tf_sample                           sample_size-tf_sample
+# background  tf_background                       background_size-tf_background
+#
 
 
 sample_dict, sample_size =read_file(sample)
