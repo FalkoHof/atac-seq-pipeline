@@ -102,10 +102,15 @@ if [ $create_bed -eq 1 ]; then
   #convert to bed, keep reads from nuclear chromosomes, then sort and store them
   bedtools bamtobed -i $bam_files/$f | grep "^Ath_chr[1-5]" |\
     sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.bed
+  python add_offset_for_fp.py $bed_files/${f%.*}.bed $bed_files/${f%.*}.offset.bed
+
   bedtools bamtobed -i $split_bam/${f%.*}.subnucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.subnucl.bed
+  python add_offset_for_fp.py $bed_files/${f%.*}.subnucl.bed $bed_files/${f%.*}.subnucl.offset.bed
+
   bedtools bamtobed -i $split_bam/${f%.*}.nucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
+  python add_offset_for_fp.py $bed_files/${f%.*}.nucl.bed $bed_files/${f%.*}.nucl.offset.bed
 
   #TODO switch to a bam based approach!
   echo "##Calculating length profiles..."
@@ -113,10 +118,10 @@ if [ $create_bed -eq 1 ]; then
   samtools sort -n -m 3G -@ $threads -o $frag_len_dir/${f%.*}.name_sorted.bam  \
     $bam_files/$f
   bedtools bamtobed -i $frag_len_dir/${f%.*}.name_sorted.bam > \
-    $frag_len_dir/${f%.*}.name_sorted.bed >
+    $frag_len_dir/${f%.*}.name_sorted.bed
 
   python $pipe_dir/extract_read_length.py -g -v -o $frag_len_dir \
-    $bed_files/$bed_files/${f%.*}.bed
+    $bed_files/$bed_files/${f%.*}.name_sorted.bed
   echo "##Calculating length profiles... - Done"
   echo "#Converting bam files to bed... - Done"
 fi
@@ -128,11 +133,11 @@ if [ $run_fseq -eq 1 ]; then
   mkdir -p $fseq_files/nucl
   #run fseq on the different files...
   sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/combined \
-    $bed_files/${f%.*}.bed
+    $bed_files/${f%.*}.offset.bed
   sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/subnucl \
-    $bed_files/${f%.*}.subnucl.bed
+    $bed_files/${f%.*}.subnucl.offset.bed
   sh $fseq -v -f 0 -of npf -t 2.0 -o $fseq_files/nucl \
-    $bed_files/${f%.*}.nucl.bed
+    $bed_files/${f%.*}.nucl.offset.bed
   echo "#Peak-calling with f-seq... - Done"
 
   echo "#Merging f-seq files..."
@@ -245,6 +250,8 @@ if [ $clean -eq 1 ]; then
   echo "#Cleaning up..."
   rm -rv $bed_files
   rm -rv $temp_dir
+  rm -v  $frag_len_dir/${f%.*}.name_sorted.bed
+  rm -v  $frag_len_dir/${f%.*}.name_sorted.bam
   echo "#Cleaning up... - Done"
 fi
 
