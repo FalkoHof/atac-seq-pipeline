@@ -4,7 +4,7 @@
 #PBS -J 1-17
 #PBS -j oe
 #PBS -q workq
-#PBS -o /lustre/scratch/users/falko.hofmann/log/161127_atac-seq/peak-calling/161127_atac-seq_^array_index^_peak_calling.log
+#PBS -o /lustre/scratch/users/falko.hofmann/log/170222_atac-seq/170222_atac-seq_^array_index^_peak_calling.log
 #PBS -l walltime=12:00:00
 #PBS -l select=1:ncpus=8:mem=48gb
 
@@ -34,6 +34,7 @@ nucl_filter=$pipe_dir/bamtools_filter/bamtools_polynucl.json
 fseq=/lustre/scratch/users/$USER/software/F-seq/dist~/fseq/bin/fseq
 #igvtools=/lustre/scratch/users/$USER/software/IGVTools/igvtools
 tair10_size=119146348
+region_filter=$pipe_dir/bamtools_filter/region_blacklist.bed
 ##### Obtain Parameters from mapping file using $PBS_ARRAY_INDEX as line number
 input_mapper=`sed -n "${PBS_ARRAY_INDEX} p" $pbs_mapping_file` #read mapping file
 names_mapped=($input_mapper)
@@ -85,12 +86,13 @@ fi
 if [ $split_files -eq 1 ]; then
   echo "#Splitting bam files..."
   mkdir -p $split_bam
+  samtools view -bh $bam_files/$f -U $bam_files/${f%.*}.fltr.bam -L $region_filter
   #get the subnucleosomal reads and sort them
-  bamtools filter -in $bam_files/$f -script $subnucl_filter | \
+  bamtools filter -in $bam_files/${f%.*}.fltr.bam -script $subnucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
   samtools index $split_bam/${f%.*}.subnucl.bam
   #get the nucleosomal reads and sort them
-  bamtools filter -in $bam_files/$f -script $nucl_filter | \
+  bamtools filter -in $bam_files/${f%.*}.fltr.bam -script $nucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.nucl.bam
   samtools index $split_bam/${f%.*}.nucl.bam
   echo "#Splitting bam files... - Done"
@@ -100,23 +102,23 @@ if [ $create_bed -eq 1 ]; then
   echo "#Converting bam files to bed..."
   mkdir -p $bed_files
   #convert to bed, keep reads from nuclear chromosomes, then sort and store them
-  bedtools bamtobed -i $bam_files/$f | grep "^Ath_chr[1-5]" |\
+  bedtools bamtobed -i $bam_files/${f%.*}.fltr.bam | grep "^Ath_chr[1-5]" |\
     sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.bed
-  python add_offset_for_fp.py $bed_files/${f%.*}.bed $bed_files/${f%.*}.offset.bed
+  python $pipe_dir/add_offset_for_fp.py $bed_files/${f%.*}.bed $bed_files/${f%.*}.offset.bed
 
   bedtools bamtobed -i $split_bam/${f%.*}.subnucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.subnucl.bed
-  python add_offset_for_fp.py $bed_files/${f%.*}.subnucl.bed $bed_files/${f%.*}.subnucl.offset.bed
+  python $pipe_dir/add_offset_for_fp.py $bed_files/${f%.*}.subnucl.bed $bed_files/${f%.*}.subnucl.offset.bed
 
   bedtools bamtobed -i $split_bam/${f%.*}.nucl.bam | \
     grep "^Ath_chr[1-5]" | sort -k1,1V -k2,2n -T $temp_dir > $bed_files/${f%.*}.nucl.bed
-  python add_offset_for_fp.py $bed_files/${f%.*}.nucl.bed $bed_files/${f%.*}.nucl.offset.bed
+  python $pipe_dir/add_offset_for_fp.py $bed_files/${f%.*}.nucl.bed $bed_files/${f%.*}.nucl.offset.bed
 
   #TODO switch to a bam based approach!
   echo "##Calculating length profiles..."
   mkdir -p $frag_len_dir
   samtools sort -n -m 3G -@ $threads -o $frag_len_dir/${f%.*}.name_sorted.bam  \
-    $bam_files/$f
+    $bam_files/${f%.*}.fltr.bam
   bedtools bamtobed -i $frag_len_dir/${f%.*}.name_sorted.bam > \
     $frag_len_dir/${f%.*}.name_sorted.bed
 
@@ -171,7 +173,7 @@ if [ $create_wig -eq 1 ]; then
   ml OpenSSL/1.0.1p-foss-2015a
 
   bamCoverage \
-    -b $bam_files/$f \
+    -b $bam_files/${f%.*}.fltr.bam \
     -o $wig_files/${f%.*}.bw \
     --binSize=1 \
     --normalizeTo1x $tair10_size \
@@ -207,7 +209,7 @@ if [ $run_macs2 -eq 1 ]; then
   mkdir -p $macs2_files/nucl
 
   macs2 callpeak \
-    -t $bam_files/$f \
+    -t $bam_files/${f%.*}.fltr.bam \
     -f BAMPE \
     -g $tair10_size \
     -n ${f%.*} \
