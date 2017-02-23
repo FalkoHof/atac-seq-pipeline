@@ -254,6 +254,7 @@ if [ $clean -eq 1 ]; then
   rm -rv $temp_dir
   rm -v  $frag_len_dir/${f%.*}.name_sorted.bed
   rm -v  $frag_len_dir/${f%.*}.name_sorted.bam
+  rm -v  $bam_files/${f%.*}.fltr.bam
   echo "#Cleaning up... - Done"
 fi
 
