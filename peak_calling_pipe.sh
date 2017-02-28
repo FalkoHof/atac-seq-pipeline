@@ -87,6 +87,8 @@ if [ $split_files -eq 1 ]; then
   echo "#Splitting bam files..."
   mkdir -p $split_bam
   samtools view -bh $bam_files/$f -U $bam_files/${f%.*}.fltr.bam -L $region_filter
+  samtools index $bam_files/${f%.*}.fltr.bam
+
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/${f%.*}.fltr.bam -script $subnucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
