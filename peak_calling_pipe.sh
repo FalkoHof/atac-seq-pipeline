@@ -121,7 +121,7 @@ if [ $create_bed -eq 1 ]; then
   samtools sort -n -m 3G -@ $threads -o $frag_len_dir/${f%.*}.name_sorted.bam  \
     $bam_files/${f%.*}.fltr.bam
   bedtools bamtobed -i $frag_len_dir/${f%.*}.name_sorted.bam > \
-    $frag_len_dir/${f%.*}.name_sorted.bed
+    $bed_files/${f%.*}.name_sorted.bed
 
   python $pipe_dir/extract_read_length.py -g -v -o $frag_len_dir \
     $bed_files/$bed_files/${f%.*}.name_sorted.bed
