@@ -86,9 +86,8 @@ fi
 if [ $split_files -eq 1 ]; then
   echo "#Splitting bam files..."
   mkdir -p $split_bam
-  samtools view -bh $bam_files/$f -U $bam_files/${f%.*}.fltr.bam -L $region_filter
+  samtools view -bh $bam_files/$f -U $bam_files/${f%.*}.fltr.bam -L $region_filter > /dev/null
   samtools index $bam_files/${f%.*}.fltr.bam
-
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/${f%.*}.fltr.bam -script $subnucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
@@ -256,7 +255,7 @@ if [ $clean -eq 1 ]; then
   rm -rv $temp_dir
   rm -v  $frag_len_dir/${f%.*}.name_sorted.bed
   rm -v  $frag_len_dir/${f%.*}.name_sorted.bam
-  rm -v  $bam_files/${f%.*}.fltr.bam
+  #rm -v  $bam_files/${f%.*}.fltr.bam
   echo "#Cleaning up... - Done"
 fi
 
