@@ -86,8 +86,9 @@ fi
 if [ $split_files -eq 1 ]; then
   echo "#Splitting bam files..."
   mkdir -p $split_bam
-  samtools view -bh $bam_files/$f -U $bam_files/${f%.*}.fltr.bam -L $region_filter > /dev/null
-  samtools index $bam_files/${f%.*}.fltr.bam
+  samtools view -bh $bam_files/$f -U $bam_files/${f%.*}.fltr.bam -L $region_filter
+  samtools index $split_bam/${f%.*}.subnucl.bam
+
   #get the subnucleosomal reads and sort them
   bamtools filter -in $bam_files/${f%.*}.fltr.bam -script $subnucl_filter | \
     samtools sort -m 3G -@ $threads - -o $split_bam/${f%.*}.subnucl.bam
@@ -122,9 +123,8 @@ if [ $create_bed -eq 1 ]; then
     $bam_files/${f%.*}.fltr.bam
   bedtools bamtobed -i $frag_len_dir/${f%.*}.name_sorted.bam > \
     $bed_files/${f%.*}.name_sorted.bed
-
   python $pipe_dir/extract_read_length.py -g -v -o $frag_len_dir \
-    $bed_files/$bed_files/${f%.*}.name_sorted.bed
+    $bed_files/${f%.*}.name_sorted.bed
   echo "##Calculating length profiles... - Done"
   echo "#Converting bam files to bed... - Done"
 fi
@@ -255,7 +255,7 @@ if [ $clean -eq 1 ]; then
   rm -rv $temp_dir
   rm -v  $frag_len_dir/${f%.*}.name_sorted.bed
   rm -v  $frag_len_dir/${f%.*}.name_sorted.bam
-  #rm -v  $bam_files/${f%.*}.fltr.bam
+  rm -v  $bam_files/${f%.*}.fltr.bam
   echo "#Cleaning up... - Done"
 fi
 
